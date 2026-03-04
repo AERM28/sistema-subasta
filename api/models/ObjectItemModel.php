@@ -11,12 +11,22 @@ class ObjectItemModel
     /* Listar todos los objetos */
     public function all()
     {
+        $imagenA = new ObjectImageModel();
+        $categoriaA = new CategoryModel();
         $vSql = "SELECT oi.*, os.name AS status_name, u.full_name AS seller_name" .
-                " FROM object_item oi, object_status os, user u" .
-                " WHERE oi.status_id = os.id" .
-                " AND oi.seller_id = u.id" .
-                " ORDER BY oi.date_created DESC;";
+            " FROM object_item oi, object_status os, user u" .
+            " WHERE oi.status_id = os.id" .
+            " AND oi.seller_id = u.id" .
+            " ORDER BY oi.date_created DESC;";
         $vResultado = $this->enlace->ExecuteSQL($vSql);
+        if (!empty($vResultado) && is_array($vResultado)) {
+            for ($i = 0; $i < count($vResultado); $i++) {
+                // Convertir objeto a array para que json_encode lo serialice bien
+                $vResultado[$i] = (array) $vResultado[$i];
+                $vResultado[$i]['imagen'] = $imagenA->getByObject($vResultado[$i]['id']);
+                $vResultado[$i]['categoria'] = $categoriaA->getCategoriesByObject($vResultado[$i]['id']);
+            }
+        }
         return $vResultado;
     }
 
@@ -24,10 +34,10 @@ class ObjectItemModel
     public function get($id)
     {
         $vSql = "SELECT oi.*, os.name AS status_name, u.full_name AS seller_name" .
-                " FROM object_item oi, object_status os, user u" .
-                " WHERE oi.status_id = os.id" .
-                " AND oi.seller_id = u.id" .
-                " AND oi.id = $id;";
+            " FROM object_item oi, object_status os, user u" .
+            " WHERE oi.status_id = os.id" .
+            " AND oi.seller_id = u.id" .
+            " AND oi.id = $id;";
         $vResultado = $this->enlace->ExecuteSQL($vSql);
         return $vResultado[0];
     }
@@ -40,10 +50,10 @@ class ObjectItemModel
         $auctionModel  = new AuctionModel();
 
         $vSql = "SELECT oi.*, os.name AS status_name, u.full_name AS seller_name" .
-                " FROM object_item oi, object_status os, user u" .
-                " WHERE oi.status_id = os.id" .
-                " AND oi.seller_id = u.id" .
-                " AND oi.id = $id;";
+            " FROM object_item oi, object_status os, user u" .
+            " WHERE oi.status_id = os.id" .
+            " AND oi.seller_id = u.id" .
+            " AND oi.id = $id;";
         $vResultado = $this->enlace->ExecuteSQL($vSql);
 
         if (!empty($vResultado)) {
@@ -59,11 +69,11 @@ class ObjectItemModel
     public function getByCategory($categoryId)
     {
         $vSql = "SELECT oi.*, os.name AS status_name, u.full_name AS seller_name" .
-                " FROM object_item oi, object_status os, user u, object_category oc" .
-                " WHERE oi.status_id = os.id" .
-                " AND oi.seller_id = u.id" .
-                " AND oi.id = oc.object_id" .
-                " AND oc.category_id = $categoryId;";
+            " FROM object_item oi, object_status os, user u, object_category oc" .
+            " WHERE oi.status_id = os.id" .
+            " AND oi.seller_id = u.id" .
+            " AND oi.id = oc.object_id" .
+            " AND oc.category_id = $categoryId;";
         $vResultado = $this->enlace->ExecuteSQL($vSql);
         return $vResultado;
     }
@@ -72,9 +82,9 @@ class ObjectItemModel
     public function getBySeller($sellerId)
     {
         $vSql = "SELECT oi.*, os.name AS status_name" .
-                " FROM object_item oi, object_status os" .
-                " WHERE oi.status_id = os.id" .
-                " AND oi.seller_id = $sellerId;";
+            " FROM object_item oi, object_status os" .
+            " WHERE oi.status_id = os.id" .
+            " AND oi.seller_id = $sellerId;";
         $vResultado = $this->enlace->ExecuteSQL($vSql);
         return $vResultado;
     }
