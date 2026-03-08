@@ -22,6 +22,13 @@ class UserService {
         return axios.get(BASE_URL + '/getUserDetail/' + userId);
     }
 
+    updateUser(id, data) {
+        return axios.put(BASE_URL + '/update/' + id, data);
+    }
+
+    toggleStatus(id) {
+        return axios.patch(BASE_URL + '/toggleStatus', { id: id });
+    }
 }
 
 export default new UserService();

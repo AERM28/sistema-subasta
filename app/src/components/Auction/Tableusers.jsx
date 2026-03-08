@@ -15,14 +15,13 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Eye, ArrowLeft } from "lucide-react";
+import { Eye, ArrowLeft, Pencil, Lock, Unlock } from "lucide-react";
 import UserService from "@/services/UserService";
 import { useEffect, useState } from "react";
 import { LoadingGrid } from "../ui/custom/LoadingGrid";
 import { ErrorAlert } from "../ui/custom/ErrorAlert";
 import { EmptyState } from "../ui/custom/EmptyState";
 
-// Headers de la tabla
 const userColumns = [
     { key: "full_name", label: "Nombre completo" },
     { key: "role_name", label: "Rol" },
@@ -39,9 +38,7 @@ export default function TableUsers() {
         const fetchData = async () => {
             try {
                 const response = await UserService.getUsers();
-                console.log(response);
                 const result = response.data;
-                console.log(result);
                 if (result.success) {
                     setUsers(result.data || []);
                 } else {
@@ -55,6 +52,20 @@ export default function TableUsers() {
         };
         fetchData();
     }, []);
+
+    const handleToggleStatus = async (user) => {
+        const newStatusId = user.status_name === "activo" ? 2 : 1;
+        try {
+            await UserService.toggleStatus(user.id, newStatusId);
+            setUsers(prev => prev.map(u =>
+                u.id === user.id
+                    ? { ...u, status_id: newStatusId, status_name: newStatusId === 1 ? "activo" : "bloqueado" }
+                    : u
+            ));
+        } catch (err) {
+            console.error("Error al cambiar estado:", err);
+        }
+    };
 
     if (loading) return <LoadingGrid type="grid" />;
     if (error) return <ErrorAlert title="Error al cargar usuarios" message={error} />;
@@ -86,13 +97,13 @@ export default function TableUsers() {
                                 <TableCell className="font-medium">{user.full_name}</TableCell>
                                 <TableCell>{user.role_name}</TableCell>
                                 <TableCell>
-                                    <Badge
-                                        variant={user.status_name === "activo" ? "default" : "destructive"}
-                                    >
+                                    <Badge variant={user.status_name === "activo" ? "default" : "destructive"}>
                                         {user.status_name}
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="flex justify-start items-center gap-1">
+
+                                    {/* Ver detalle */}
                                     <TooltipProvider>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
@@ -105,6 +116,42 @@ export default function TableUsers() {
                                             <TooltipContent>Ver detalles</TooltipContent>
                                         </Tooltip>
                                     </TooltipProvider>
+
+                                    {/* Editar */}
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="ghost" size="icon" asChild>
+                                                    <Link to={`/user/${user.id}/edit`}>
+                                                        <Pencil className="h-4 w-4 text-blue-400" />
+                                                    </Link>
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Editar usuario</TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+
+                                    {/* Bloquear / Activar */}
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleToggleStatus(user)}
+                                                >
+                                                    {user.status_name === "activo"
+                                                        ? <Lock className="h-4 w-4 text-destructive" />
+                                                        : <Unlock className="h-4 w-4 text-green-400" />
+                                                    }
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                {user.status_name === "activo" ? "Bloquear usuario" : "Activar usuario"}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+
                                 </TableCell>
                             </TableRow>
                         ))}

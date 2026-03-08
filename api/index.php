@@ -25,8 +25,6 @@ require_once "models/ObjectImageModel.php";
 require_once "models/ObjectItemModel.php";
 require_once "models/AuctionModel.php";
 require_once "models/BidModel.php";
-require_once "models/AuctionResultModel.php";
-require_once "models/PaymentModel.php";
 require_once "models/UserModel.php";
 
 /* --- Controladores */
@@ -35,8 +33,6 @@ require_once "controllers/ObjectItemController.php";
 require_once "controllers/ObjectImageController.php";
 require_once "controllers/AuctionController.php";
 require_once "controllers/BidController.php";
-require_once "controllers/AuctionResultController.php";
-require_once "controllers/PaymentController.php";
 require_once "controllers/UserController.php";
 
 /* --- Enrutador */

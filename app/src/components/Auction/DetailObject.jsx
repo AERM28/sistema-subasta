@@ -7,7 +7,8 @@ import ObjectItemService from "@/services/ObjectItemService";
 import { LoadingGrid } from "../ui/custom/LoadingGrid";
 import { ErrorAlert } from "../ui/custom/ErrorAlert";
 
-const BASE_IMG = import.meta.env.VITE_BASE_URL + "uploads";
+
+const BASE_IMG = import.meta.env.VITE_BASE_URL + "uploads/"; 
 
 export default function DetailObject() {
     const { id } = useParams();

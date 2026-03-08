@@ -7,7 +7,7 @@ import AuctionService from "@/services/AuctionService";
 import { LoadingGrid } from "../ui/custom/LoadingGrid";
 import { ErrorAlert } from "../ui/custom/ErrorAlert";
 
-const BASE_IMG = import.meta.env.VITE_BASE_URL + "../uploads/";
+const BASE_IMG = import.meta.env.VITE_BASE_URL + "uploads/";
 
 function formatDate(dateStr) {
     if (!dateStr) return "Sin fecha";
@@ -53,6 +53,8 @@ export default function DetailAuction() {
     if (error) return <ErrorAlert title="Error al cargar subasta" message={error} />;
     if (!auction) return <ErrorAlert title="Subasta no encontrada" message="La subasta solicitada no existe." />;
 
+    const obj = auction.object;
+
     return (
         <div className="container mx-auto py-8 max-w-3xl">
             <h1 className="text-3xl font-bold tracking-tight mb-6">Detalle de Subasta</h1>
@@ -62,12 +64,12 @@ export default function DetailAuction() {
                 <h2 className="text-lg font-semibold mb-4">Objeto subastado</h2>
                 <div className="flex gap-6">
                     {/* Imagen */}
-                    <div className="h-40 w-40 shrink-0 bg-muted rounded-md overflow-hidden flex items-center justify-center">
-                        {auction.object_image ? (
+                    <div className="h-48 w-48 shrink-0 bg-muted rounded-lg overflow-hidden flex items-center justify-center border">
+                        {obj?.images && obj.images.length > 0 ? (
                             <img
-                                src={BASE_IMG + auction.object_image}
-                                alt={auction.object_title}
-                                className="w-full h-full object-cover"
+                                src={`${BASE_IMG}/${obj.images[0].image}`}
+                                alt={obj?.title}
+                                className="w-full h-full object-contain object-center"
                             />
                         ) : (
                             <Package className="h-12 w-12 text-muted-foreground" />
@@ -76,12 +78,12 @@ export default function DetailAuction() {
                     {/* Info objeto */}
                     <div className="flex flex-col gap-2">
                         <p className="text-sm text-muted-foreground">Nombre</p>
-                        <p className="font-semibold text-lg">{auction.object_title}</p>
+                        <p className="font-semibold text-lg">{obj?.title}</p>
 
                         <p className="text-sm text-muted-foreground">Categorías</p>
                         <div className="flex flex-wrap gap-1">
-                            {auction.categories && auction.categories.length > 0 ? (
-                                auction.categories.map((cat) => (
+                            {obj?.categories && obj.categories.length > 0 ? (
+                                obj.categories.map((cat) => (
                                     <Badge key={cat.id} variant="secondary">{cat.name}</Badge>
                                 ))
                             ) : (
@@ -90,7 +92,7 @@ export default function DetailAuction() {
                         </div>
 
                         <p className="text-sm text-muted-foreground">Condición</p>
-                        <p className="font-medium capitalize">{auction.object_condition}</p>
+                        <p className="font-medium capitalize">{obj?.item_condition}</p>
 
                         <p className="text-sm text-muted-foreground">Vendedor</p>
                         <p className="font-medium">{auction.seller_name}</p>

@@ -40,4 +40,36 @@ class user
             handleException($e);
         }
     }
+
+    /* PUT /user/1 → actualizar nombre y correo */
+    public function update($param)
+    {
+        try {
+            $request  = new Request();
+            $response = new Response();
+            $inputJSON = $request->getJSON();
+            $inputJSON->id = $param;
+            $user     = new UserModel();
+            $result   = $user->update($inputJSON);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    /* PATCH /user/toggleStatus/1 → bloquear o activar */
+    public function toggleStatus()
+    {
+        try {
+            $request  = new Request();
+            $response = new Response();
+            $inputJSON = $request->getJSON();
+            $user     = new UserModel();
+            $result   = $user->toggleStatus($inputJSON->id);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }
