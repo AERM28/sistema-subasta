@@ -58,7 +58,7 @@ class user
         }
     }
 
-    /* PATCH /user/toggleStatus/1 → bloquear o activar */
+    /* /user/toggleStatus/1 → bloquear o activar */
     public function toggleStatus()
     {
         try {

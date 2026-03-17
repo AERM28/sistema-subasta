@@ -68,4 +68,74 @@ class objectitem
             handleException($e);
         }
     }
+
+    //POST
+    public function create()
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            //Instancia del modelo
+            $item = new ObjectItemModel();
+            //Acción del modelo a ejecutar
+            $result = $item->create($inputJSON);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    public function update($param)
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            $inputJSON->id = $param;
+            //Instancia del modelo
+            $item = new ObjectItemModel();
+            //Acción del modelo a ejecutar
+            $result = $item->update($inputJSON);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    public function toggleStatus()
+    {
+        try {
+            $request   = new Request();
+            $response  = new Response();
+            $inputJSON = $request->getJSON();
+            $object    = new ObjectItemModel();
+            $result    = $object->toggleStatus($inputJSON->id);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    public function delete()
+    {
+        try {
+            $request   = new Request();
+            $response  = new Response();
+            $inputJSON = $request->getJSON();
+            $object    = new ObjectItemModel();
+            $result    = $object->delete($inputJSON->id);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
 }

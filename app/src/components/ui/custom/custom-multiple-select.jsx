@@ -5,9 +5,8 @@ import { Check, ChevronsUpDown, X, AlertCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge"; 
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
 
 export function CustomMultiSelect({
     field,
@@ -19,7 +18,6 @@ export function CustomMultiSelect({
 }) {
     const [open, setOpen] = useState(false);
 
-    // Sincronizamos directamente con field.value para evitar el useEffect
     const selectedValues = useMemo(() => field.value || [], [field.value]);
 
     const toggleValue = (val) => {
@@ -27,7 +25,6 @@ export function CustomMultiSelect({
         const newValues = selectedValues.includes(value)
             ? selectedValues.filter((v) => v !== value)
             : [...selectedValues, value];
-
         field.onChange(newValues);
     };
 
@@ -37,15 +34,20 @@ export function CustomMultiSelect({
         field.onChange(selectedValues.filter((v) => v !== value));
     };
 
-    // Memoizamos los items seleccionados para mejorar el rendimiento
     const selectedItems = useMemo(() =>
-        data.filter((item) => selectedValues.includes(String(getOptionValue(item)))),
+        Array.isArray(data)
+            ? data.filter((item) => selectedValues.includes(String(getOptionValue(item))))
+            : [],
         [data, selectedValues, getOptionValue]
     );
 
     return (
         <div className="w-full space-y-2">
-            {label && <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{label}</label>}
+            {label && (
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    {label}
+                </label>
+            )}
 
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
@@ -55,6 +57,7 @@ export function CustomMultiSelect({
                         aria-expanded={open}
                         className={cn(
                             "w-full justify-between rounded-xl font-normal transition-all",
+                            "bg-background border-input hover:bg-accent/50",
                             error ? "border-destructive" : "border-input",
                             selectedValues.length === 0 && "text-muted-foreground"
                         )}
@@ -66,18 +69,32 @@ export function CustomMultiSelect({
                     </Button>
                 </PopoverTrigger>
 
-                <PopoverContent className="w-full min-w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                    <Command>
-                        <CommandInput placeholder={`Buscar ${label}...`} />
-                        <CommandList>
-                            <CommandEmpty>No se encontraron resultados.</CommandEmpty>
-                            <CommandGroup>
+                <PopoverContent
+                    className="w-full min-w-[var(--radix-popover-trigger-width)] p-0 bg-background border border-border shadow-md"
+                    align="start"
+                >
+                    <Command className="bg-background">
+                        <CommandInput
+                            placeholder={`Buscar ${label}...`}
+                            className="bg-background text-foreground placeholder:text-muted-foreground"
+                        />
+                        <CommandList className="bg-background">
+                            <CommandEmpty className="text-muted-foreground py-4 text-center text-sm">
+                                No se encontraron resultados.
+                            </CommandEmpty>
+                            <CommandGroup className="bg-background">
                                 {data.map((item) => {
                                     const value = String(getOptionValue(item));
                                     const isSelected = selectedValues.includes(value);
                                     return (
                                         <CommandItem
                                             key={value}
+                                            className={cn(
+                                                "text-foreground cursor-pointer",
+                                                "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                                                "hover:bg-accent hover:text-accent-foreground",
+                                                isSelected && "bg-accent/50"
+                                            )}
                                             onSelect={() => toggleValue(value)}
                                         >
                                             <Check
@@ -96,7 +113,7 @@ export function CustomMultiSelect({
                 </PopoverContent>
             </Popover>
 
-            {/* Chips/Badges optimizados */}
+            {/* Chips seleccionados */}
             {selectedItems.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                     {selectedItems.map((item) => {
@@ -121,7 +138,6 @@ export function CustomMultiSelect({
                 </div>
             )}
 
-            {/* Mensaje de Error */}
             {error && (
                 <p className="flex items-center gap-1.5 text-sm font-medium text-destructive">
                     <AlertCircle className="h-4 w-4" />

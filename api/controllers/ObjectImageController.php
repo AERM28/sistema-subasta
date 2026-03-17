@@ -1,43 +1,38 @@
 <?php
-class objectimage
-{
-    public function index()
+//class Genre
+class objectimage{
+    //POST Crear
+    public function create()
     {
         try {
+            $request = new Request();
             $response = new Response();
-            $image    = new ObjectImageModel();
-            $result   = $image->all();
+            //Obtener json enviado
+            $inputFILE = $request->getBody();
+            //Instancia del modelo
+            $imagen = new ObjectImageModel();
+            //Acción del modelo a ejecutar
+            $result = $imagen->uploadFile($inputFILE);
+            //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             $response->toJSON($result);
             handleException($e);
+            
         }
     }
-
-    public function get($param)
+    public function get($id)
     {
         try {
             $response = new Response();
-            $image    = new ObjectImageModel();
-            $result   = $image->get($param);
+            $imagen = new ObjectImageModel();
+            $result = $imagen->getByObject($id);
+            //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             $response->toJSON($result);
             handleException($e);
-        }
-    }
-
-    /* GET /objectimage/getByObject/1 → imágenes de un objeto */
-    public function getByObject($objectId)
-    {
-        try {
-            $response = new Response();
-            $image    = new ObjectImageModel();
-            $result   = $image->getByObject($objectId);
-            $response->toJSON($result);
-        } catch (Exception $e) {
-            $response->toJSON($result);
-            handleException($e);
+            
         }
     }
 }

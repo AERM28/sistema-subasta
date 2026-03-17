@@ -37,7 +37,7 @@ class BidModel
                 " FROM bid b, user u" .
                 " WHERE b.bidder_id = u.id" .
                 " AND b.auction_id = $auctionId" .
-                " ORDER BY b.created_at ASC;";
+                " ORDER BY b.created_at DESC;";
         $vResultado = $this->enlace->ExecuteSQL($vSql);
         return $vResultado;
     }

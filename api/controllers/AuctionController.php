@@ -69,6 +69,32 @@ class auction
         }
     }
 
+    public function getDraft()
+    {
+        try {
+            $response = new Response();
+            $auction  = new AuctionModel();
+            $result   = $auction->getDraft();
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    public function getScheduled()
+    {
+        try {
+            $response = new Response();
+            $auction  = new AuctionModel();
+            $result   = $auction->getScheduled();
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
     /* GET /auction/getBySeller/2 → subastas de un vendedor */
     public function getBySeller($sellerId)
     {
@@ -104,6 +130,71 @@ class auction
             $response = new Response();
             $auction  = new AuctionModel();
             $result   = $auction->getByObject($objectId);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    /* POST /auction/create */
+    public function create()
+    {
+        try {
+            $request   = new Request();
+            $response  = new Response();
+            $inputJSON = $request->getJSON();
+            $auction   = new AuctionModel();
+            $result    = $auction->create($inputJSON);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    /* PUT /auction/update/1 */
+    public function update($param)
+    {
+        try {
+            $request   = new Request();
+            $response  = new Response();
+            $inputJSON = $request->getJSON();
+            $inputJSON->id = $param;
+            $auction = new AuctionModel();
+            $result  = $auction->update($inputJSON);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    /* PUT /auction/publish/1 */
+    public function publish()
+    {
+        try {
+            $request   = new Request();
+            $response  = new Response();
+            $inputJSON = $request->getJSON();
+            $auction   = new AuctionModel();
+            $result    = $auction->publish($inputJSON->id);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+    /* PUT /auction/cancel/1 */
+    public function cancel()
+    {
+        try {
+            $request   = new Request();
+            $response  = new Response();
+            $inputJSON = $request->getJSON();
+            $auction   = new AuctionModel();
+            $result    = $auction->cancel($inputJSON->id);
             $response->toJSON($result);
         } catch (Exception $e) {
             $response->toJSON($result);

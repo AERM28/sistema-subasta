@@ -21,7 +21,6 @@ import { cn } from "@/lib/utils";
 export function CustomSelect({ field, data = [], label, getOptionLabel, getOptionValue, error }) {
     const [open, setOpen] = useState(false);
 
-    // Encontramos el label del item seleccionado para mostrarlo en el botón
     const selectedLabel = data.find(
         (item) => String(getOptionValue(item)) === String(field.value)
     );
@@ -48,14 +47,19 @@ export function CustomSelect({ field, data = [], label, getOptionLabel, getOptio
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent
-                    className="w-full min-w-[var(--radix-popover-trigger-width)] p-0"
+                    className="w-full min-w-[var(--radix-popover-trigger-width)] p-0 bg-background border border-border shadow-md"
                     align="start"
                 >
-                    <Command>
-                        <CommandInput placeholder={`Buscar ${label.toLowerCase()}...`} />
-                        <CommandList>
-                            <CommandEmpty>No se encontraron resultados.</CommandEmpty>
-                            <CommandGroup>
+                    <Command className="bg-background">
+                        <CommandInput
+                            placeholder={`Buscar ${label.toLowerCase()}...`}
+                            className="bg-background text-foreground placeholder:text-muted-foreground"
+                        />
+                        <CommandList className="bg-background">
+                            <CommandEmpty className="text-muted-foreground py-4 text-center text-sm">
+                                No se encontraron resultados.
+                            </CommandEmpty>
+                            <CommandGroup className="bg-background">
                                 {data.map((item) => {
                                     const value = String(getOptionValue(item));
                                     const isSelected = String(field.value) === value;
@@ -63,7 +67,13 @@ export function CustomSelect({ field, data = [], label, getOptionLabel, getOptio
                                     return (
                                         <CommandItem
                                             key={value}
-                                            value={getOptionLabel(item)} // Permite buscar por el label
+                                            value={getOptionLabel(item)}
+                                            className={cn(
+                                                "text-foreground cursor-pointer",
+                                                "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                                                "hover:bg-accent hover:text-accent-foreground",
+                                                isSelected && "bg-accent/50"
+                                            )}
                                             onSelect={() => {
                                                 field.onChange(value);
                                                 setOpen(false);
@@ -85,7 +95,6 @@ export function CustomSelect({ field, data = [], label, getOptionLabel, getOptio
                 </PopoverContent>
             </Popover>
 
-            {/* Mensaje de error optimizado */}
             {error && (
                 <p className="flex items-center gap-1.5 mt-1 text-sm font-medium text-destructive">
                     <AlertCircle className="h-4 w-4" />
