@@ -5,23 +5,32 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+// shadcn/ui
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
+// icons
 import { Save, ArrowLeft, User } from "lucide-react";
 
+// servicios
 import CategoryService from "@/services/CategoryService";
 import ObjectItemService from "@/services/ObjectItemService";
 import ObjectImageService from "@/services/ObjectImageService";
+import UserService from "@/services/UserService";
 
+// componentes reutilizables
 import { CustomMultiSelect } from "../ui/custom/custom-multiple-select";
 import { CustomInputField } from "../ui/custom/custom-input-field";
 import { CustomSelect } from "../ui/custom/custom-select";
+import { LoadingGrid } from "../ui/custom/LoadingGrid";
+import { ErrorAlert } from "../ui/custom/ErrorAlert";
 
-const SIMULATED_SELLER = { id: 1, full_name: "Carlos Vendedor" };
+// Variable lógica simulada
+const SIMULATED_SELLER_ID = 1;
+
 
 const CONDITIONS = [
     { id: "nuevo", name: "Nuevo" },
@@ -31,12 +40,16 @@ const CONDITIONS = [
 export function CreateObjectItem() {
     const navigate = useNavigate();
 
+    const [seller, setSeller]                 = useState(null);
     const [dataCategories, setDataCategories] = useState([]);
-    const [file, setFile] = useState(null);
-    const [fileURL, setFileURL] = useState(null);
-    const [error, setError] = useState("");
-    const [imageError, setImageError] = useState("");
+    const [file, setFile]                     = useState(null);
+    const [fileURL, setFileURL]               = useState(null);
+    const [imageError, setImageError]         = useState("");
+    const [loading, setLoading]               = useState(true);
+    const [error, setError]                   = useState("");
+    const [submitting, setSubmitting]         = useState(false);
 
+    /* Esquema de validación Yup */
     const objectSchema = yup.object({
         title: yup.string()
             .required("El nombre es requerido")
@@ -51,6 +64,7 @@ export function CreateObjectItem() {
             .min(1, "Debe seleccionar al menos una categoría"),
     });
 
+    /* React Hook Form */
     const {
         control,
         handleSubmit,
@@ -65,6 +79,7 @@ export function CreateObjectItem() {
         resolver: yupResolver(objectSchema),
     });
 
+    /*** Manejo de imagen ***/
     const handleChangeImage = (e) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
@@ -74,32 +89,41 @@ export function CreateObjectItem() {
         }
     };
 
+    /*** Carga de datos ***/
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const categoriesRes = await CategoryService.getAll();
+                const [userRes, categoriesRes] = await Promise.all([
+                    UserService.getUserById(SIMULATED_SELLER_ID),
+                    CategoryService.getAll(),
+                ]);
+                setSeller(userRes.data.data);
                 setDataCategories(categoriesRes.data.data || []);
-            } catch (error) {
-                if (error.name !== "AbortError") setError(error.message);
+            } catch (err) {
+                if (err.name !== "AbortError") setError(err.message);
+            } finally {
+                setLoading(false);
             }
         };
         fetchData();
     }, []);
 
+    /*** Submit ***/
     const onSubmit = async (dataForm) => {
         if (!file) {
             setImageError("Debes seleccionar al menos una imagen para el objeto.");
             return;
         }
 
+        setSubmitting(true);
         try {
             const response = await ObjectItemService.createObjectItem({
-                title: dataForm.title,
-                description: dataForm.description,
+                title:          dataForm.title,
+                description:    dataForm.description,
                 item_condition: dataForm.item_condition,
-                categories: dataForm.categories,
-                seller_id: SIMULATED_SELLER.id,
-                status_id: 1,
+                categories:     dataForm.categories,
+                seller_id:      SIMULATED_SELLER_ID,
+                status_id:      1,
             });
 
             if (response.data) {
@@ -113,16 +137,16 @@ export function CreateObjectItem() {
                     { duration: 3000 }
                 );
                 navigate("/object");
-            } else if (response.error) {
-                setError(response.error);
             }
         } catch (err) {
-            console.error(err);
-            setError("Error al crear el objeto");
+            toast.error("Error al crear el objeto. Intenta de nuevo.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    if (error) return <p className="text-red-600">{error}</p>;
+    if (loading) return <LoadingGrid type="grid" />;
+    if (error)   return <ErrorAlert title="Error al cargar datos" message={error} />;
 
     return (
         <Card className="p-6 max-w-3xl mx-auto">
@@ -130,14 +154,16 @@ export function CreateObjectItem() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
+                {/* Vendedor asignado — no editable */}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <div>
                         <p className="text-xs text-muted-foreground">Vendedor asignado</p>
-                        <p className="text-sm font-medium">{SIMULATED_SELLER.full_name}</p>
+                        <p className="text-sm font-medium">{seller?.full_name || "—"}</p>
                     </div>
                 </div>
 
+                {/* Estado inicial — no editable */}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <div>
                         <p className="text-xs text-muted-foreground">Estado inicial</p>
@@ -145,6 +171,7 @@ export function CreateObjectItem() {
                     </div>
                 </div>
 
+                {/* Nombre */}
                 <div>
                     <Controller name="title" control={control} render={({ field }) =>
                         <CustomInputField
@@ -156,6 +183,7 @@ export function CreateObjectItem() {
                     } />
                 </div>
 
+                {/* Descripción */}
                 <div>
                     <Label className="block mb-1 text-sm font-medium">Descripción</Label>
                     <Controller name="description" control={control} render={({ field }) =>
@@ -170,6 +198,7 @@ export function CreateObjectItem() {
                     )}
                 </div>
 
+                {/* Condición */}
                 <div>
                     <Label className="block mb-1 text-sm font-medium">Condición</Label>
                     <Controller name="item_condition" control={control} render={({ field }) =>
@@ -184,6 +213,7 @@ export function CreateObjectItem() {
                     } />
                 </div>
 
+                {/* Categorías */}
                 <div>
                     <Controller name="categories" control={control} render={({ field }) =>
                         <CustomMultiSelect
@@ -198,13 +228,13 @@ export function CreateObjectItem() {
                     } />
                 </div>
 
+                {/* Imagen */}
                 <div className="mb-6">
                     <Label htmlFor="object-image" className="block mb-1 text-sm font-medium">
                         Imagen
                     </Label>
                     <div
-                        className={`relative w-56 h-56 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer overflow-hidden hover:border-primary transition-colors ${imageError ? "border-destructive" : "border-muted/50"
-                            }`}
+                        className={`relative w-56 h-56 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer overflow-hidden hover:border-primary transition-colors ${imageError ? "border-destructive" : "border-muted/50"}`}
                         onClick={() => document.getElementById("object-image").click()}
                     >
                         {!fileURL && (
@@ -233,6 +263,7 @@ export function CreateObjectItem() {
                     />
                 </div>
 
+                {/* Acciones */}
                 <div className="flex justify-between gap-4 mt-6">
                     <Button
                         type="button"
@@ -243,9 +274,9 @@ export function CreateObjectItem() {
                         <ArrowLeft className="w-4 h-4" />
                         Regresar
                     </Button>
-                    <Button type="submit" className="flex-1">
+                    <Button type="submit" className="flex-1" disabled={submitting}>
                         <Save className="w-4 h-4" />
-                        Guardar
+                        {submitting ? "Guardando..." : "Guardar"}
                     </Button>
                 </div>
 

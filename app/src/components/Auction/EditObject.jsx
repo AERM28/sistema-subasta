@@ -5,19 +5,26 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
+// shadcn/ui
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
+// icons
 import { Save, ArrowLeft, User, AlertCircle } from "lucide-react";
 
+// servicios
 import CategoryService from "@/services/CategoryService";
 import ObjectItemService from "@/services/ObjectItemService";
+import ObjectImageService from "@/services/ObjectImageService";
 
+// componentes reutilizables
 import { CustomMultiSelect } from "../ui/custom/custom-multiple-select";
 import { CustomInputField } from "../ui/custom/custom-input-field";
 import { CustomSelect } from "../ui/custom/custom-select";
+import { LoadingGrid } from "../ui/custom/LoadingGrid";
+import { ErrorAlert } from "../ui/custom/ErrorAlert";
 
 const CONDITIONS = [
     { id: "nuevo", name: "Nuevo" },
@@ -29,16 +36,23 @@ const OBJECT_STATUSES = [
     { id: "2", name: "Inactivo" },
 ];
 
+const BASE_IMG = import.meta.env.VITE_BASE_URL + "uploads";
+
 export function EditObject() {
     const navigate = useNavigate();
     const { id } = useParams();
 
+    /*** Estados ***/
     const [dataCategories, setDataCategories] = useState([]);
     const [object, setObject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
     const [blockedByAuction, setBlockedByAuction] = useState(false);
+    const [file, setFile] = useState(null);
+    const [fileURL, setFileURL] = useState(null);
 
+    /*** Esquema de validación Yup ***/
     const objectSchema = yup.object({
         title: yup.string()
             .required("El nombre es requerido")
@@ -55,6 +69,7 @@ export function EditObject() {
             .min(1, "Debe seleccionar al menos una categoría"),
     });
 
+    /*** React Hook Form ***/
     const {
         control,
         handleSubmit,
@@ -71,6 +86,7 @@ export function EditObject() {
         resolver: yupResolver(objectSchema),
     });
 
+    /*** Carga de datos ***/
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -87,6 +103,11 @@ export function EditObject() {
                     (a) => a.status_name === "activa"
                 );
                 setBlockedByAuction(tieneSubastaActiva);
+
+                // Precargar imagen existente
+                if (obj.images && obj.images[0]) {
+                    setFileURL(`${BASE_IMG}/${obj.images[0].image}`);
+                }
 
                 reset({
                     title: obj.title,
@@ -107,7 +128,18 @@ export function EditObject() {
         fetchData();
     }, [id, reset]);
 
+    /*** Manejo de imagen ***/
+    const handleChangeImage = (e) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            setFileURL(URL.createObjectURL(selectedFile));
+        }
+    };
+
+    /*** Submit ***/
     const onSubmit = async (dataForm) => {
+        setSubmitting(true);
         try {
             const response = await ObjectItemService.updateObjectItem({
                 id: id,
@@ -117,25 +149,33 @@ export function EditObject() {
                 status_id: dataForm.status_id,
                 categories: dataForm.categories,
                 seller_id: object.seller_id,
+                has_new_image: file ? true : false,
             });
 
-            if (response.data?.error) {
-                toast.error(response.data.error);
+            if (response.data?.data?.error) {
+                toast.error(response.data.data.error, { duration: 5000 });
                 return;
             }
 
-            if (response.data) {
-                toast.success("Objeto actualizado correctamente", { duration: 3000 });
-                navigate("/object");
+            // Si hay imagen nueva, subirla (las anteriores ya fueron borradas en el backend)
+            if (file) {
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("object_id", id);
+                await ObjectImageService.upload(formData);
             }
+
+            toast.success("Objeto actualizado correctamente", { duration: 3000 });
+            navigate("/object");
         } catch (err) {
-            console.error(err);
-            toast.error("Error al actualizar el objeto");
+            toast.error("Error al actualizar el objeto. Intenta de nuevo.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    if (loading) return <p className="text-muted-foreground p-6">Cargando...</p>;
-    if (error) return <p className="text-red-600 p-6">{error}</p>;
+    if (loading) return <LoadingGrid type="grid" />;
+    if (error) return <ErrorAlert title="Error al cargar el objeto" message={error} />;
 
     if (blockedByAuction) return (
         <Card className="p-6 max-w-3xl mx-auto">
@@ -165,6 +205,7 @@ export function EditObject() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
+                {/* Vendedor — no editable */}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <div>
@@ -173,6 +214,7 @@ export function EditObject() {
                     </div>
                 </div>
 
+                {/* Nombre */}
                 <div>
                     <Controller name="title" control={control} render={({ field }) =>
                         <CustomInputField
@@ -184,6 +226,7 @@ export function EditObject() {
                     } />
                 </div>
 
+                {/* Descripción */}
                 <div>
                     <Label className="block mb-1 text-sm font-medium">Descripción</Label>
                     <Controller name="description" control={control} render={({ field }) =>
@@ -198,6 +241,7 @@ export function EditObject() {
                     )}
                 </div>
 
+                {/* Condición */}
                 <div>
                     <Label className="block mb-1 text-sm font-medium">Condición</Label>
                     <Controller name="item_condition" control={control} render={({ field }) =>
@@ -212,6 +256,7 @@ export function EditObject() {
                     } />
                 </div>
 
+                {/* Estado */}
                 <div>
                     <Label className="block mb-1 text-sm font-medium">Estado</Label>
                     <Controller name="status_id" control={control} render={({ field }) =>
@@ -226,6 +271,7 @@ export function EditObject() {
                     } />
                 </div>
 
+                {/* Categorías */}
                 <div>
                     <Controller name="categories" control={control} render={({ field }) =>
                         <CustomMultiSelect
@@ -239,6 +285,39 @@ export function EditObject() {
                     } />
                 </div>
 
+                {/* Imagen */}
+                <div className="mb-6">
+                    <Label htmlFor="object-image-edit" className="block mb-1 text-sm font-medium">
+                        Imagen <span className="text-muted-foreground font-normal text-xs">(clic para cambiar)</span>
+                    </Label>
+                    <div
+                        className="relative w-56 h-56 border-2 border-dashed border-muted/50 rounded-lg flex items-center justify-center cursor-pointer overflow-hidden hover:border-primary transition-colors"
+                        onClick={() => document.getElementById("object-image-edit").click()}
+                    >
+                        {!fileURL ? (
+                            <div className="text-center px-4">
+                                <p className="text-sm text-muted-foreground">Haz clic para seleccionar</p>
+                                <p className="text-xs text-muted-foreground">(jpg, png, máximo 2MB)</p>
+                            </div>
+                        ) : (
+                            <img
+                                src={fileURL}
+                                alt="preview"
+                                className="w-full h-full object-contain rounded-lg shadow-sm"
+                            />
+                        )}
+                    </div>
+                    {file && <p className="text-xs text-muted-foreground mt-1">Nueva imagen: {file.name}</p>}
+                    <input
+                        type="file"
+                        id="object-image-edit"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleChangeImage}
+                    />
+                </div>
+
+                {/* Acciones */}
                 <div className="flex justify-between gap-4 mt-6">
                     <Button
                         type="button"
@@ -249,9 +328,9 @@ export function EditObject() {
                         <ArrowLeft className="w-4 h-4" />
                         Regresar
                     </Button>
-                    <Button type="submit" className="flex-1">
+                    <Button type="submit" className="flex-1" disabled={submitting}>
                         <Save className="w-4 h-4" />
-                        Guardar cambios
+                        {submitting ? "Guardando..." : "Guardar cambios"}
                     </Button>
                 </div>
 

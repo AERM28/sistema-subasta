@@ -1,5 +1,4 @@
 <?php
-//class Genre
 class objectimage{
     //POST Crear
     public function create()

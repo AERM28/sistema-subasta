@@ -5,22 +5,29 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+// shadcn/ui
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+// icons
 import { Save, ArrowLeft, User, Info } from "lucide-react";
 
+// servicios
 import AuctionService from "@/services/AuctionService";
 import ObjectItemService from "@/services/ObjectItemService";
+import UserService from "@/services/UserService";
+
+// componentes reutilizables
 import { CustomInputField } from "../ui/custom/custom-input-field";
 import { CustomSelect } from "../ui/custom/custom-select";
-import { ErrorAlert } from "../ui/custom/ErrorAlert";
 import { LoadingGrid } from "../ui/custom/LoadingGrid";
+import { ErrorAlert } from "../ui/custom/ErrorAlert";
 
-// ─── Variable lógica simulada ────────────────────────────────
-const SIMULATED_SELLER = { id: 1, full_name: "Carlos Vendedor" };
-// ─────────────────────────────────────────────────────────────
+//Variable lógica simulada
+const SIMULATED_SELLER_ID = 1;
+
 
 const auctionSchema = yup.object({
     object_id: yup
@@ -57,6 +64,7 @@ const auctionSchema = yup.object({
 export function CreateAuction() {
     const navigate = useNavigate();
 
+    const [seller, setSeller] = useState(null);
     const [dataObjects, setDataObjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -84,11 +92,14 @@ export function CreateAuction() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await ObjectItemService.getObjects();
-                const activos = (res.data.data || []).filter((o) => o.status_id == 1);
-                setDataObjects(activos);
+                const [userRes, objectsRes] = await Promise.all([
+                    UserService.getUserById(SIMULATED_SELLER_ID),
+                    ObjectItemService.getAvailableForSeller(SIMULATED_SELLER_ID),
+                ]);
+                setSeller(userRes.data.data);
+                setDataObjects(objectsRes.data.data || []);
             } catch (err) {
-                setError("No se pudieron cargar los objetos disponibles");
+                setError("No se pudieron cargar los datos necesarios");
             } finally {
                 setLoading(false);
             }
@@ -105,11 +116,11 @@ export function CreateAuction() {
                 end_at: dataForm.end_at,
                 base_price: dataForm.base_price,
                 min_increment: dataForm.min_increment,
-                seller_id: SIMULATED_SELLER.id,
+                seller_id: SIMULATED_SELLER_ID,
             });
 
-            if (response.data?.error) {
-                toast.error(response.data.error, { duration: 5000 });
+            if (response.data?.data?.error) {
+                toast.error(response.data.data.error, { duration: 5000 });
                 return;
             }
 
@@ -141,7 +152,7 @@ export function CreateAuction() {
                     <User className="h-4 w-4 text-muted-foreground" />
                     <div>
                         <p className="text-xs text-muted-foreground">Vendedor asignado</p>
-                        <p className="text-sm font-medium">{SIMULATED_SELLER.full_name}</p>
+                        <p className="text-sm font-medium">{seller?.full_name || "—"}</p>
                     </div>
                 </div>
 
@@ -162,7 +173,7 @@ export function CreateAuction() {
                         <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <Info className="h-4 w-4 text-yellow-600 shrink-0" />
                             <p className="text-sm text-yellow-700">
-                                No tenes objetos activos disponibles. Crea un objeto primero.
+                                No tenes objetos disponibles para subastar. Verificá que tengas objetos activos sin subasta activa o programada.
                             </p>
                         </div>
                     ) : (

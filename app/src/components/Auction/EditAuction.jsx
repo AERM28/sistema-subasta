@@ -187,7 +187,7 @@ export function EditAuction() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-                {/* Vendedor — no editable */}
+                {/* Vendedor*/}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <div>
@@ -196,7 +196,7 @@ export function EditAuction() {
                     </div>
                 </div>
 
-                {/* Objeto — no editable */}
+                {/* Objeto*/}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <div>
                         <p className="text-xs text-muted-foreground">Objeto subastado</p>
@@ -204,7 +204,7 @@ export function EditAuction() {
                     </div>
                 </div>
 
-                {/* Estado actual — no editable */}
+                {/* Estado actual*/}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <div>
                         <p className="text-xs text-muted-foreground">Estado actual</p>

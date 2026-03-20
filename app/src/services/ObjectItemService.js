@@ -19,6 +19,10 @@ class ObjectItemService {
         return axios.get(BASE_URL + '/getObjectDetail/' + id);
     }
 
+    getAvailableForSeller(sellerId) {
+        return axios.get(BASE_URL + '/getAvailableForSeller/' + sellerId);
+    }
+
     createObjectItem(Item) {
         return axios.post(BASE_URL, JSON.stringify(Item));
     }

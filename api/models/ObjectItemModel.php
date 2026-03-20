@@ -104,6 +104,31 @@ class ObjectItemModel
         return $vResultado;
     }
 
+    public function getAvailableForSeller($sellerId)
+    {
+        $imagenA    = new ObjectImageModel();
+        $categoriaA = new CategoryModel();
+
+        $vSql = "SELECT oi.* FROM object_item oi
+             WHERE oi.seller_id = $sellerId
+             AND oi.status_id = 1
+             AND NOT EXISTS (
+                 SELECT 1 FROM auction a 
+                 WHERE a.object_id = oi.id 
+                 AND a.status_id in (2,3)
+             );";
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
+
+        if (!empty($vResultado) && is_array($vResultado)) {
+            for ($i = 0; $i < count($vResultado); $i++) {
+                $vResultado[$i]->imagen    = $imagenA->getByObject($vResultado[$i]->id);
+                $vResultado[$i]->categoria = $categoriaA->getCategoriesByObject($vResultado[$i]->id);
+            }
+        }
+
+        return $vResultado;
+    }
+
     public function create($Object)
     {
         //consulta sql
@@ -137,19 +162,23 @@ class ObjectItemModel
             return ["error" => "No se puede editar un objeto con subasta activa"];
         }
 
-        $vSql = "Update object_item SET seller_id = '$Object->seller_id'," .
+        $vSql = "UPDATE object_item SET seller_id = '$Object->seller_id'," .
             "title = '$Object->title', description = '$Object->description', item_condition = '$Object->item_condition'," .
-            "status_id = '$Object->status_id' where id=$Object->id";
-        //Ejecutar consulta        
-        $CResults = $this->enlace->executeSQL_DML($vSql);
-        //Borrar categorias del objeto
-        $vSql = "Delete from object_category where object_id = $Object->id";
-        $vResultadoD = $this->enlace->executeSQL_DML($vSql);
+            "status_id = '$Object->status_id' WHERE id=$Object->id";
+        $this->enlace->executeSQL_DML($vSql);
 
+        // Borrar categorías y reinsertar
+        $vSql = "DELETE FROM object_category WHERE object_id = $Object->id";
+        $this->enlace->executeSQL_DML($vSql);
         foreach ($Object->categories as $value) {
-            $sql = "Insert into object_category(object_id,category_id)" .
-                " Values($Object->id,$value)";
-            $vResultadoGen = $this->enlace->executeSQL_DML($sql);
+            $sql = "INSERT INTO object_category(object_id, category_id) VALUES($Object->id, $value)";
+            $this->enlace->executeSQL_DML($sql);
+        }
+
+        // Borrar imágenes anteriores solo si viene imagen nueva
+        if (isset($Object->has_new_image) && $Object->has_new_image) {
+            $vSql = "DELETE FROM object_image WHERE object_id = $Object->id";
+            $this->enlace->executeSQL_DML($vSql);
         }
 
         return $this->get($Object->id);
@@ -157,6 +186,20 @@ class ObjectItemModel
 
     public function toggleStatus($id)
     {
+        $current = $this->get($id);
+
+        // Solo aplica restricción al desactivar (status 1 → 2)
+        if ($current->status_id == 1) {
+            if ($this->hasActiveAuction($id)) {
+                return ["error" => "No se puede desactivar un objeto con subasta activa."];
+            }
+            $vSql = "SELECT COUNT(*) as total FROM auction WHERE object_id = $id;";
+            $resultado = $this->enlace->ExecuteSQL($vSql);
+            if ($resultado[0]->total > 0) {
+                return ["error" => "No se puede desactivar un objeto que ha sido subastado anteriormente."];
+            }
+        }
+
         $vSql = "UPDATE object_item 
              SET status_id = CASE WHEN status_id = 1 THEN 2 ELSE 1 END 
              WHERE id = $id;";
@@ -164,7 +207,7 @@ class ObjectItemModel
         return $this->get($id);
     }
 
-    public function delete($id)
+    /*public function delete($id)
     {
         // Verificar subasta activa
         if ($this->hasActiveAuction($id)) {
@@ -182,5 +225,5 @@ class ObjectItemModel
         $vSql = "UPDATE object_item SET status_id = 3 WHERE id = $id;";
         $this->enlace->executeSQL_DML($vSql);
         return $this->get($id);
-    }
+    }*/
 }

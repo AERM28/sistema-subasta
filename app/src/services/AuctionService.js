@@ -67,6 +67,7 @@ class AuctionService {
     cancel(id) {
         return axios.post(BASE_URL + '/cancel', { id });
     }
+
 }
 
 export default new AuctionService();

@@ -69,6 +69,19 @@ class objectitem
         }
     }
 
+    public function getAvailableForSeller($sellerId)
+    {
+        try {
+            $response = new Response();
+            $object   = new ObjectItemModel();
+            $result   = $object->getAvailableForSeller($sellerId);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
     //POST
     public function create()
     {
@@ -124,7 +137,7 @@ class objectitem
         }
     }
 
-    public function delete()
+    /*public function delete()
     {
         try {
             $request   = new Request();
@@ -137,5 +150,5 @@ class objectitem
             $response->toJSON($result);
             handleException($e);
         }
-    }
+    }*/
 }

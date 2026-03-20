@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
     Eye, ArrowLeft, Plus,
-    Pencil, Trash2, ToggleLeft, ToggleRight,
+    Pencil, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import ObjectItemService from "@/services/ObjectItemService";
 import { useEffect, useState, useCallback } from "react";
@@ -32,24 +32,21 @@ import toast from "react-hot-toast";
 
 const BASE_IMG = import.meta.env.VITE_BASE_URL + "uploads";
 
-function StatusBadge({ statusId, statusName }) {
+function StatusBadge({ statusId }) {
     if (statusId == 1)
-        return <Badge variant="default" className="bg-green-600 text-white">Activo</Badge>;
+        return <Badge className="bg-green-600 text-white">Activo</Badge>;
     if (statusId == 2)
         return <Badge variant="outline" className="border-gray-400 text-gray-500">Inactivo</Badge>;
-    if (statusId == 3)
-        return <Badge variant="destructive">Eliminado</Badge>;
-    return <Badge variant="secondary">{statusName}</Badge>;
+    return <Badge variant="secondary">{statusId}</Badge>;
 }
 
 export default function ObjectList() {
     const navigate = useNavigate();
 
     const [objects, setObjects] = useState([]);
-    const [error, setError] = useState(null);
+    const [error, setError]     = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Diálogo de confirmación
     const [dialog, setDialog] = useState({
         open: false, title: "", message: "", onConfirm: null,
     });
@@ -60,7 +57,6 @@ export default function ObjectList() {
     const closeDialog = () =>
         setDialog({ open: false, title: "", message: "", onConfirm: null });
 
-    // ── Cargar objetos ────────────────────────────────────────
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -76,51 +72,44 @@ export default function ObjectList() {
     useEffect(() => { fetchData(); }, [fetchData]);
 
     // ── Toggle activo/inactivo ────────────────────────────────
+    // Desactivar = eliminación lógica con validaciones de regla de negocio
     const handleToggle = (obj) => {
         const accion = obj.status_id == 1 ? "desactivar" : "activar";
+        const mensaje = obj.status_id == 1
+            ? `¿Deseas desactivar "${obj.title}"? Solo es posible si el objeto no ha sido subastado y no tiene una subasta activa.`
+            : `¿Deseas activar "${obj.title}"?`;
+
         openDialog(
             `${accion.charAt(0).toUpperCase() + accion.slice(1)} objeto`,
-            `¿Deseas ${accion} "${obj.title}"?`,
+            mensaje,
             async () => {
                 try {
-                    await ObjectItemService.toggleStatus(obj.id);
-                    toast.success(`Objeto ${accion === "activar" ? "activado" : "desactivado"} correctamente`);
-                    fetchData();
-                } catch (err) {
-                    toast.error("Error al cambiar el estado: " + err.message);
-                }
-            }
-        );
-    };
+                    const response = await ObjectItemService.toggleStatus(obj.id);
 
-    // ── Eliminación lógica ────────────────────────────────────
-    const handleDelete = (obj) => {
-        openDialog(
-            "Eliminar objeto",
-            `¿Estás seguro de que deseas eliminar "${obj.title}"? Esta acción no se puede deshacer y el objeto no podrá usarse en subastas.`,
-            async () => {
-                try {
-                    const response = await ObjectItemService.delete(obj.id);
-                    if (response.data?.error) {
-                        toast.error(response.data.error, { duration: 5000 });
+                    // Error de regla de negocio desde el backend
+                    if (response.data?.data?.error) {
+                        toast.error(response.data.data.error, { duration: 5000 });
                         return;
                     }
-                    toast.success("Objeto eliminado correctamente");
+
+                    toast.success(
+                        `Objeto ${accion === "activar" ? "activado" : "desactivado"} correctamente`
+                    );
                     fetchData();
                 } catch (err) {
-                    toast.error("Error al eliminar: " + err.message);
+                    const mensaje = err.response?.data?.message || "Error al cambiar el estado";
+                    toast.error(mensaje, { duration: 5000 });
                 }
             }
         );
     };
 
     if (loading) return <LoadingGrid type="grid" />;
-    if (error) return <ErrorAlert title="Error al cargar objetos" message={error} />;
+    if (error)   return <ErrorAlert title="Error al cargar objetos" message={error} />;
 
     return (
         <div className="container mx-auto py-8">
 
-            {/* Diálogo de confirmación */}
             <AlertDialog open={dialog.open} onOpenChange={closeDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -141,7 +130,6 @@ export default function ObjectList() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Encabezado */}
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold tracking-tight">Objetos Subastables</h1>
                 <Button asChild className="flex items-center gap-2">
@@ -172,9 +160,8 @@ export default function ObjectList() {
                             {objects.map((obj) => (
                                 <TableRow
                                     key={obj.id}
-                                    className={obj.status_id == 3 ? "opacity-50" : ""}
+                                    className={obj.status_id == 2 ? "opacity-60" : ""}
                                 >
-                                    {/* Imagen miniatura */}
                                     <TableCell>
                                         {obj.imagen && obj.imagen[0] ? (
                                             <img
@@ -189,15 +176,12 @@ export default function ObjectList() {
                                         )}
                                     </TableCell>
 
-                                    {/* Nombre */}
                                     <TableCell className="font-medium">{obj.title}</TableCell>
 
-                                    {/* Vendedor */}
                                     <TableCell className="text-sm text-muted-foreground">
                                         {obj.seller_name}
                                     </TableCell>
 
-                                    {/* Categorías */}
                                     <TableCell>
                                         <div className="flex flex-wrap gap-1">
                                             {obj.categoria && obj.categoria.length > 0
@@ -211,20 +195,14 @@ export default function ObjectList() {
                                         </div>
                                     </TableCell>
 
-                                    {/* Condición */}
                                     <TableCell className="capitalize text-sm">
                                         {obj.item_condition}
                                     </TableCell>
 
-                                    {/* Estado */}
                                     <TableCell>
-                                        <StatusBadge
-                                            statusId={obj.status_id}
-                                            statusName={obj.status_name}
-                                        />
+                                        <StatusBadge statusId={obj.status_id} />
                                     </TableCell>
 
-                                    {/* Acciones */}
                                     <TableCell>
                                         <div className="flex items-center gap-1">
 
@@ -242,8 +220,8 @@ export default function ObjectList() {
                                                 </Tooltip>
                                             </TooltipProvider>
 
-                                            {/* Editar — solo si no está eliminado */}
-                                            {obj.status_id != 3 && (
+                                            {/* Editar — solo si está activo */}
+                                            {obj.status_id == 1 && (
                                                 <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
@@ -258,46 +236,26 @@ export default function ObjectList() {
                                                 </TooltipProvider>
                                             )}
 
-                                            {/* Toggle activo/inactivo — solo si no está eliminado */}
-                                            {obj.status_id != 3 && (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => handleToggle(obj)}
-                                                            >
-                                                                {obj.status_id == 1
-                                                                    ? <ToggleRight className="h-4 w-4 text-green-500" />
-                                                                    : <ToggleLeft className="h-4 w-4 text-gray-400" />
-                                                                }
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            {obj.status_id == 1 ? "Desactivar" : "Activar"}
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            )}
-
-                                            {/* Eliminar — solo si no está eliminado */}
-                                            {obj.status_id != 3 && (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => handleDelete(obj)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4 text-red-500" />
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>Eliminar</TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            )}
+                                            {/* Toggle activo/inactivo */}
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleToggle(obj)}
+                                                        >
+                                                            {obj.status_id == 1
+                                                                ? <ToggleRight className="h-4 w-4 text-green-500" />
+                                                                : <ToggleLeft className="h-4 w-4 text-gray-400" />
+                                                            }
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        {obj.status_id == 1 ? "Desactivar" : "Activar"}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
 
                                         </div>
                                     </TableCell>
