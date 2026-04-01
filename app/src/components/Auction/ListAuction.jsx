@@ -69,7 +69,7 @@ export default function AuctionList() {
         onConfirm: null,
     });
 
-    // ── Cargar datos ──────────────────────────────────────────
+    // Cargar datos
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -95,7 +95,7 @@ export default function AuctionList() {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    // ── Confirmación genérica ─────────────────────────────────
+    //Confirmación genérica 
     const openDialog = (title, message, onConfirm) => {
         setDialog({ open: true, title, message, onConfirm });
     };
@@ -104,7 +104,7 @@ export default function AuctionList() {
         setDialog({ open: false, title: "", message: "", onConfirm: null });
     };
 
-    // ── Publicar ──────────────────────────────────────────────
+    //Publicar
     const handlePublish = (id) => {
         openDialog(
             "Publicar subasta",
@@ -113,7 +113,7 @@ export default function AuctionList() {
                 try {
                     await AuctionService.publish(id);
                     toast.success("Subasta publicada correctamente");
-                    fetchData(); // recarga real
+                    fetchData();
                 } catch (err) {
                     toast.error("Error al publicar: " + err.message);
                 }
@@ -121,7 +121,7 @@ export default function AuctionList() {
         );
     };
 
-    // ── Cancelar ──────────────────────────────────────────────
+    //Cancelar
     const handleCancel = (id) => {
         openDialog(
             "Cancelar subasta",
@@ -130,7 +130,7 @@ export default function AuctionList() {
                 try {
                     await AuctionService.cancel(id);
                     toast.success("Subasta cancelada correctamente");
-                    fetchData(); // recarga real
+                    fetchData();
                 } catch (err) {
                     toast.error("Error al cancelar: " + err.message);
                 }
@@ -144,7 +144,7 @@ export default function AuctionList() {
     return (
         <div className="container mx-auto py-8">
 
-            {/* Diálogo de confirmación reutilizable */}
+            {/* Diálogo de confirmación*/}
             <AlertDialog open={dialog.open} onOpenChange={closeDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -210,7 +210,7 @@ export default function AuctionList() {
                 </Button>
             </div>
 
-            {/* ── Tab Pendientes ── */}
+            {/* Tab Pendientes*/}
             {tab === "pending" && (
                 pending.length === 0 ? (
                     <EmptyState message="No hay subastas pendientes." />
@@ -267,7 +267,7 @@ export default function AuctionList() {
                                                     </Tooltip>
                                                 </TooltipProvider>
 
-                                                {/* Publicar — solo borrador */}
+                                                {/* Publicar*/}
                                                 {auction.status_id == 1 && (
                                                     <TooltipProvider>
                                                         <Tooltip>
@@ -302,7 +302,7 @@ export default function AuctionList() {
                 )
             )}
 
-            {/* ── Tab Activas ── */}
+            {/*Tab Activas*/}
             {tab === "active" && (
                 active.length === 0 ? (
                     <EmptyState message="No hay subastas activas en este momento." />
@@ -345,7 +345,7 @@ export default function AuctionList() {
                                                     </Tooltip>
                                                 </TooltipProvider>
 
-                                                {/* Cancelar — solo si no tiene pujas */}
+                                                {/* Cancelar */}
                                                 {auction.total_bids == 0 && (
                                                     <TooltipProvider>
                                                         <Tooltip>
@@ -368,7 +368,7 @@ export default function AuctionList() {
                 )
             )}
 
-            {/* ── Tab Finalizadas ── */}
+            {/*Tab Finalizadas*/}
             {tab === "finalized" && (
                 finalized.length === 0 ? (
                     <EmptyState message="No hay subastas finalizadas." />

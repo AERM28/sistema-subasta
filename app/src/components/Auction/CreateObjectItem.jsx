@@ -154,7 +154,7 @@ export function CreateObjectItem() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-                {/* Vendedor asignado — no editable */}
+                {/* Vendedor asignado */}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <div>
@@ -163,7 +163,7 @@ export function CreateObjectItem() {
                     </div>
                 </div>
 
-                {/* Estado inicial — no editable */}
+                {/* Estado inicial */}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <div>
                         <p className="text-xs text-muted-foreground">Estado inicial</p>

@@ -18,6 +18,16 @@ class BidService {
     getByBidder(bidderId) {
         return axios.get(BASE_URL + '/getByBidder/' + bidderId);
     }
+
+    // POST /bid/create
+    create(data) {
+        return axios.post(BASE_URL + '/create', JSON.stringify(data));
+    }
+
+    getHighest(auctionId) {
+        return axios.get(BASE_URL + '/getHighest/' + auctionId);
+    }
+
 }
 
 export default new BidService();

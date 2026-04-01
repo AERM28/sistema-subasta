@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Layers, Gavel, Users, Package,
-  LogIn, LogOut, Menu, X,
-  ChevronDown, Trophy, User, LayoutList,
+  Menu, X, ChevronDown, Trophy,
+  User, LayoutList, CreditCard,
 } from "lucide-react";
 import {
   Menubar, MenubarMenu, MenubarTrigger,
@@ -15,21 +15,18 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const userEmail = "Invitado";
 
+  // ─── Menú Explorar (comprador) ───────────────────────────
   const navItems = [
-    { title: "Subastas activas",     href: "/auction/active",    icon: <Gavel className="h-4 w-4" /> },
+    { title: "Subastas activas", href: "/explorar", icon: <Gavel className="h-4 w-4" /> },
     { title: "Subastas finalizadas", href: "/auction/finalized", icon: <Trophy className="h-4 w-4" /> },
-    { title: "Objetos",              href: "/object",            icon: <Package className="h-4 w-4" /> },
   ];
 
+  // ─── Menú Mantenimientos (admin/vendedor) ─────────────────
   const mantItems = [
-    { title: "Usuarios", href: "/user",    icon: <Users className="h-4 w-4" /> },
-    { title: "Objetos",  href: "/object",  icon: <Package className="h-4 w-4" /> },
+    { title: "Usuarios", href: "/user", icon: <Users className="h-4 w-4" /> },
+    { title: "Objetos", href: "/object", icon: <Package className="h-4 w-4" /> },
     { title: "Subastas", href: "/auction", icon: <LayoutList className="h-4 w-4" /> },
-  ];
-
-  const userItems = [
-    { title: "Login",  href: "/user/login", icon: <LogIn className="h-4 w-4" /> },
-    { title: "Logout", href: "#",           icon: <LogOut className="h-4 w-4" /> },
+    { title: "Pagos", href: "/payment", icon: <CreditCard className="h-4 w-4" /> },
   ];
 
   return (
@@ -46,6 +43,7 @@ export default function Header() {
         <div className="hidden md:flex flex-1 justify-center">
           <Menubar className="w-auto bg-transparent border-none shadow-none space-x-6">
 
+            {/* Explorar */}
             <MenubarMenu>
               <MenubarTrigger className="text-white font-medium flex items-center gap-1 hover:text-secondary transition">
                 <Gavel className="h-4 w-4" /> Explorar <ChevronDown className="h-3 w-3" />
@@ -61,6 +59,7 @@ export default function Header() {
               </MenubarContent>
             </MenubarMenu>
 
+            {/* Mantenimientos */}
             <MenubarMenu>
               <MenubarTrigger className="text-white font-medium flex items-center gap-1 hover:text-secondary transition">
                 <Layers className="h-4 w-4" /> Mantenimientos <ChevronDown className="h-3 w-3" />
@@ -76,18 +75,17 @@ export default function Header() {
               </MenubarContent>
             </MenubarMenu>
 
+            {/* Usuario simulado */}
             <MenubarMenu>
               <MenubarTrigger className="text-white font-medium flex items-center gap-1 hover:text-secondary transition">
                 <User className="h-4 w-4" /> {userEmail} <ChevronDown className="h-3 w-3" />
               </MenubarTrigger>
               <MenubarContent className="bg-primary/80 backdrop-blur-xl border border-white/20 shadow-xl [&_*]:text-white">
-                {userItems.map((item) => (
-                  <MenubarItem key={item.href} asChild className="focus:bg-white/10 focus:text-white">
-                    <Link to={item.href} className="flex items-center gap-2 py-2 px-3 rounded-md text-sm text-white hover:bg-white/10 transition">
-                      {item.icon} {item.title}
-                    </Link>
-                  </MenubarItem>
-                ))}
+                <MenubarItem asChild className="focus:bg-white/10 focus:text-white">
+                  <Link to="/user" className="flex items-center gap-2 py-2 px-3 rounded-md text-sm text-white hover:bg-white/10 transition">
+                    <Users className="h-4 w-4" /> Gestionar usuarios
+                  </Link>
+                </MenubarItem>
               </MenubarContent>
             </MenubarMenu>
 
@@ -118,15 +116,6 @@ export default function Header() {
               <div>
                 <h4 className="mb-2 text-lg font-semibold flex items-center gap-2"><Layers /> Mantenimientos</h4>
                 {mantItems.map((item) => (
-                  <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-white/10 transition">
-                    {item.icon} {item.title}
-                  </Link>
-                ))}
-              </div>
-              <div>
-                <h4 className="mb-2 text-lg font-semibold flex items-center gap-2"><User /> {userEmail}</h4>
-                {userItems.map((item) => (
                   <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-white/10 transition">
                     {item.icon} {item.title}

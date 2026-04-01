@@ -71,8 +71,7 @@ export default function ObjectList() {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
-    // ── Toggle activo/inactivo ────────────────────────────────
-    // Desactivar = eliminación lógica con validaciones de regla de negocio
+    // Toggle activo/inactivo
     const handleToggle = (obj) => {
         const accion = obj.status_id == 1 ? "desactivar" : "activar";
         const mensaje = obj.status_id == 1
@@ -206,7 +205,7 @@ export default function ObjectList() {
                                     <TableCell>
                                         <div className="flex items-center gap-1">
 
-                                            {/* Ver detalle — siempre */}
+                                            {/* Ver detalle */}
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
@@ -220,7 +219,7 @@ export default function ObjectList() {
                                                 </Tooltip>
                                             </TooltipProvider>
 
-                                            {/* Editar — solo si está activo */}
+                                            {/* Editar  */}
                                             {obj.status_id == 1 && (
                                                 <TooltipProvider>
                                                     <Tooltip>

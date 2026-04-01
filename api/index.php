@@ -2,6 +2,8 @@
 // Composer autoloader
 require_once 'vendor/autoload.php';
 
+date_default_timezone_set('America/Costa_Rica');
+
 /* Encabezados CORS */
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: *");
@@ -26,6 +28,7 @@ require_once "models/ObjectItemModel.php";
 require_once "models/AuctionModel.php";
 require_once "models/BidModel.php";
 require_once "models/UserModel.php";
+require_once "models/PaymentModel.php";
 
 /* --- Controladores */
 require_once "controllers/CategoryController.php";
@@ -34,6 +37,7 @@ require_once "controllers/ObjectImageController.php";
 require_once "controllers/AuctionController.php";
 require_once "controllers/BidController.php";
 require_once "controllers/UserController.php";
+require_once "controllers/PaymentController.php";
 
 /* --- Enrutador */
 require_once "routes/RoutesController.php";

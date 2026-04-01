@@ -68,6 +68,28 @@ class AuctionService {
         return axios.post(BASE_URL + '/cancel', { id });
     }
 
+    // GET /auction/getActiveWithImage
+    getActiveWithImage() {
+        return axios.get(BASE_URL + '/getActiveWithImage');
+    }
+
+    // PUT /auction/close/1
+    close(id) {
+        return axios.post(BASE_URL + '/close', { id });
+    }
+    closeAuction(auctionId) {
+        return axios.put(BASE_URL + '/close/' + auctionId);
+    }
+
+    // Obtener ganador de una subasta
+    getWinner(auctionId) {
+        return axios.get(BASE_URL + '/getWinner/' + auctionId);
+    }
+
+    activatePending() {
+        return axios.put(BASE_URL + '/activatePending');
+    }
+
 }
 
 export default new AuctionService();

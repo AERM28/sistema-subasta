@@ -55,6 +55,7 @@ class auction
         }
     }
 
+
     /* GET /auction/getFinalized → subastas finalizadas y canceladas */
     public function getFinalized()
     {
@@ -137,6 +138,18 @@ class auction
         }
     }
 
+    public function getWinner($auctionId)
+    {
+        try {
+            $response = new Response();
+            $auction  = new AuctionModel();
+            $result   = $auction->getWinner($auctionId);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
     /* POST /auction/create */
     public function create()
     {
@@ -198,6 +211,78 @@ class auction
             $response->toJSON($result);
         } catch (Exception $e) {
             $response->toJSON($result);
+            handleException($e);
+        }
+    }
+
+
+    public function activatePending()
+    {
+        try {
+            $response = new Response();
+            $auctionM = new AuctionModel();
+            $result = $auctionM->activatePendingAuctions();
+            $response->toJSON(["message" => "Subastas activadas", "data" => $result]);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    /* PUT /auction/finalizeExpired → cerrar subastas vencidas */
+    public function finalizeExpired()
+    {
+        try {
+            $response = new Response();
+            $auctionM = new AuctionModel();
+            $result = $auctionM->finalizeExpiredAuctions();
+            $response->toJSON(["message" => "Subastas finalizadas", "data" => $result]);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    public function close()
+    {
+        try {
+            $request  = new Request();
+            $response = new Response();
+            $inputJSON = $request->getJSON();
+            $id = $inputJSON->id;
+
+            if (!$id) {
+                return $response->toJSON(["error" => "ID no recibido"]);
+            }
+
+            $auctionM = new AuctionModel();
+            $result   = $auctionM->closeAuction($id);
+
+            if (is_array($result) && isset($result['error'])) {
+                return $response->toJSON($result);
+            }
+
+            try {
+                $config = require __DIR__ . '/../config.php';
+                $pusher = new Pusher\Pusher(
+                    $config['PUSHER_KEY'],
+                    $config['PUSHER_SECRET'],
+                    $config['PUSHER_APP_ID'],
+                    ['cluster' => $config['PUSHER_CLUSTER'], 'useTLS' => true]
+                );
+
+                $winnerData = null;
+                if (is_object($result) && $result->status_id == 4) {
+                    $winnerData = $auctionM->getWinner($id);
+                }
+
+                $pusher->trigger('auction-' . $id, 'auction-closed', [
+                    'auction' => $result,
+                    'winner'  => $winnerData,
+                ]);
+            } catch (Exception $pusherEx) {
+            }
+
+            $response->toJSON($result);
+        } catch (Exception $e) {
             handleException($e);
         }
     }
