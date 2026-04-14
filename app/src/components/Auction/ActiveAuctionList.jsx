@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Gavel, Clock, Package } from "lucide-react";
+import { Gavel, Clock, Package, AlertTriangle } from "lucide-react";
 import AuctionService from "@/services/AuctionService";
+import { useUser } from "@/hooks/useUser";
 import { LoadingGrid } from "../ui/custom/LoadingGrid";
 import { ErrorAlert } from "../ui/custom/ErrorAlert";
 import { EmptyState } from "../ui/custom/EmptyState";
@@ -36,19 +37,37 @@ function getTimeLeft(endAt) {
 }
 
 export default function ActiveAuctionList() {
+    const navigate = useNavigate();
+    const { isAuthenticated } = useUser();
+
+    const [countdown, setCountdown] = useState(5);
     const [auctions, setAuctions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // ── Guard: redirigir si no está autenticado ───────────────
     useEffect(() => {
+        if (!isAuthenticated) {
+            const interval = setInterval(() => {
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        navigate("/user/login");
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [isAuthenticated, navigate]);
+
+    // ── Carga de subastas ─────────────────────────────────────
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
         const fetchData = async () => {
             try {
-                // Primero activa las subastas programadas que ya deberían estar activas.
-                // Esto resuelve el caso donde la fecha de inicio ya pasó pero el estado
-                // sigue en "programada" porque nadie había consultado el sistema.
                 await AuctionService.activatePending();
-
-                // Luego trae las activas
                 const res = await AuctionService.getActive();
                 setAuctions(res.data.data || []);
             } catch (err) {
@@ -58,7 +77,27 @@ export default function ActiveAuctionList() {
             }
         };
         fetchData();
-    }, []);
+    }, [isAuthenticated]);
+
+    // ── Pantalla de acceso denegado ───────────────────────────
+    if (!isAuthenticated) {
+        return (
+            <div className="container mx-auto py-24 flex flex-col items-center gap-6 text-center">
+                <div className="flex flex-col items-center gap-3 p-8 bg-muted/40 border rounded-xl max-w-sm w-full">
+                    <AlertTriangle className="h-10 w-10 text-orange-500" />
+                    <h2 className="text-xl font-semibold">Acceso restringido</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Necesitás iniciar sesión para ver las subastas.
+                        Serás redirigido al login en{" "}
+                        <span className="font-bold text-foreground">{countdown}</span> segundos.
+                    </p>
+                    <Button asChild className="w-full mt-2">
+                        <Link to="/user/login">Ir al login ahora</Link>
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     if (loading) return <LoadingGrid type="grid" />;
     if (error) return <ErrorAlert title="Error al cargar subastas" message={error} />;
@@ -81,19 +120,19 @@ export default function ActiveAuctionList() {
                     {auctions.map((auction) => (
                         <Card key={auction.id} className="flex flex-col overflow-hidden">
 
-
                             {/* Imagen */}
                             <div className="w-full h-44 bg-black flex items-center justify-center border-b overflow-hidden">
-    {auction.first_image ? (
-        <img
-            src={BASE_IMG + auction.first_image}
-            alt={auction.object_title}
-            className="w-full h-full object-contain"
-        />
-    ) : (
-        <Package className="h-12 w-12 text-muted-foreground opacity-40" />
-    )}
-</div>
+                                {auction.first_image ? (
+                                    <img
+                                        src={BASE_IMG + auction.first_image}
+                                        alt={auction.object_title}
+                                        className="w-full h-full object-contain"
+                                    />
+                                ) : (
+                                    <Package className="h-12 w-12 text-muted-foreground opacity-40" />
+                                )}
+                            </div>
+
                             <div className="flex flex-col flex-1 p-4 gap-3">
 
                                 {/* Título y vendedor */}

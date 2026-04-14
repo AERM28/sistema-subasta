@@ -8,22 +8,18 @@ class PusherService {
 
     initialize() {
         if (this.pusher) return this.pusher;
-
         this.pusher = new Pusher(import.meta.env.VITE_PUSHER_KEY, {
             cluster: import.meta.env.VITE_PUSHER_CLUSTER,
             encrypted: true,
         });
-
         return this.pusher;
     }
 
     subscribe(channel) {
         if (!this.pusher) this.initialize();
-
         if (!this.channels[channel]) {
             this.channels[channel] = this.pusher.subscribe(channel);
         }
-
         return this.channels[channel];
     }
 
@@ -39,9 +35,15 @@ class PusherService {
         pusherChannel.bind(event, callback);
     }
 
-    unbind(channel, event) {
+    // callback es opcional: si se pasa, quita solo ese listener;
+    // si no se pasa, quita todos los listeners del evento.
+    unbind(channel, event, callback) {
         if (this.channels[channel]) {
-            this.channels[channel].unbind(event);
+            if (callback) {
+                this.channels[channel].unbind(event, callback);
+            } else {
+                this.channels[channel].unbind(event);
+            }
         }
     }
 

@@ -1,4 +1,7 @@
 <?php
+
+use Firebase\JWT\JWT;
+
 class UserModel
 {
     public $enlace;
@@ -69,11 +72,53 @@ class UserModel
 
     // Para bloquear/activar
     public function toggleStatus($id)
-{
-    $sql = "UPDATE user 
+    {
+        $sql = "UPDATE user 
             SET status_id = CASE WHEN status_id = 1 THEN 2 ELSE 1 END 
             WHERE id = $id";
-    $this->enlace->executeSQL_DML($sql);
-    return $this->get($id);
-}
+        $this->enlace->executeSQL_DML($sql);
+        return $this->get($id);
+    }
+
+    public function login($objeto)
+    {
+        $vSql = "SELECT * FROM user WHERE email='$objeto->email'";
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
+
+        if (is_object($vResultado[0])) {
+            $user = $vResultado[0];
+            if (password_verify($objeto->password, $user->password)) {
+                $usuario = $this->get($user->id);
+                if (!empty($usuario)) {
+                    $data = [
+                        'id'        => $usuario->id,
+                        'email'     => $usuario->email,
+                        'full_name' => $usuario->full_name,
+                        'rol'       => $usuario->role_name,
+                        'iat'       => time(),
+                        'exp'       => time() + 3600
+                    ];
+                    $jwt_token = JWT::encode($data, config::get('SECRET_KEY'), 'HS256');
+                    return $jwt_token;
+                }
+            }
+        } else {
+            return false;
+        }
+    }
+
+    public function create($objeto)
+    {
+        if (isset($objeto->password) && $objeto->password != null) {
+            $crypt = password_hash($objeto->password, PASSWORD_BCRYPT);
+            $objeto->password = $crypt;
+        }
+
+        $vSql = "INSERT INTO user (full_name, email, password, role_id, status_id)" .
+            " VALUES ('$objeto->full_name', '$objeto->email', '$objeto->password', $objeto->role_id, 1)";
+        //                                                                         
+
+        $vResultado = $this->enlace->executeSQL_DML_last($vSql);
+        return $this->get($vResultado);
+    }
 }

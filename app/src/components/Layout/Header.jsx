@@ -4,16 +4,21 @@ import {
   Layers, Gavel, Users, Package,
   Menu, X, ChevronDown, Trophy,
   User, LayoutList, CreditCard,
+  LogIn,
+  UserPlus,
+  LogOut,
 } from "lucide-react";
 import {
   Menubar, MenubarMenu, MenubarTrigger,
   MenubarContent, MenubarItem,
 } from "@/components/ui/menubar";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { useUser } from "@/hooks/useUser";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const userEmail = "Invitado";
+  const { user, isAuthenticated, clearUser, authorize } = useUser();
+  const userEmail = user?.email || "Invitado";
 
   // ─── Menú Explorar (comprador) ───────────────────────────
   const navItems = [
@@ -27,6 +32,28 @@ export default function Header() {
     { title: "Objetos", href: "/object", icon: <Package className="h-4 w-4" /> },
     { title: "Subastas", href: "/auction", icon: <LayoutList className="h-4 w-4" /> },
     { title: "Pagos", href: "/payment", icon: <CreditCard className="h-4 w-4" /> },
+  ];
+
+  const userItems = [
+    {
+      title: "Login",
+      href: "/user/login",
+      icon: <LogIn className="h-4 w-4" />,
+      show: !isAuthenticated, // solo visible si NO está autenticado
+    },
+    {
+      title: "Registrarse",
+      href: "/user/create",
+      icon: <UserPlus className="h-4 w-4" />,
+      show: !isAuthenticated,
+    },
+    {
+      title: "Logout",
+      href: "#login",
+      icon: <LogOut className="h-4 w-4" />,
+      show: isAuthenticated,
+      action: clearUser,
+    },
   ];
 
   return (
@@ -75,20 +102,26 @@ export default function Header() {
               </MenubarContent>
             </MenubarMenu>
 
-            {/* Usuario simulado */}
+            {/* Usuario */}
             <MenubarMenu>
               <MenubarTrigger className="text-white font-medium flex items-center gap-1 hover:text-secondary transition">
-                <User className="h-4 w-4" /> {userEmail} <ChevronDown className="h-3 w-3" />
+                <User className="h-4 w-4" /> {userEmail}
+                <ChevronDown className="h-3 w-3" />
               </MenubarTrigger>
-              <MenubarContent className="bg-primary/80 backdrop-blur-xl border border-white/20 shadow-xl [&_*]:text-white">
-                <MenubarItem asChild className="focus:bg-white/10 focus:text-white">
-                  <Link to="/user" className="flex items-center gap-2 py-2 px-3 rounded-md text-sm text-white hover:bg-white/10 transition">
-                    <Users className="h-4 w-4" /> Gestionar usuarios
-                  </Link>
-                </MenubarItem>
+              <MenubarContent className="bg-primary/0 backdrop-blur-md border-white/10">
+                {userItems.filter(i => i.show).map(item => (
+                  <MenubarItem key={item.href} asChild>
+                    <Link
+                      to={item.href}
+                      onClick={() => item.action && item.action()}
+                      className="flex items-center gap-2 py-2 px-3 rounded-md text-sm hover:bg-accent/10 transition"
+                    >
+                      {item.icon} {item.title}
+                    </Link>
+                  </MenubarItem>
+                ))}
               </MenubarContent>
             </MenubarMenu>
-
           </Menubar>
         </div>
 

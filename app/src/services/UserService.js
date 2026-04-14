@@ -29,6 +29,16 @@ class UserService {
     toggleStatus(id) {
         return axios.patch(BASE_URL + '/toggleStatus', { id: id });
     }
+
+    // POST /user
+    createUser(user) {
+        return axios.post(BASE_URL, JSON.stringify(user));
+    }
+ 
+    // POST /user/login
+    loginUser(user) {
+        return axios.post(BASE_URL + '/login', JSON.stringify(user));
+    }
 }
 
 export default new UserService();

@@ -28,7 +28,7 @@ export function Home() {
           <a href="/user/login" className="px-6 py-3 bg-secondary text-white rounded-lg font-semibold shadow-lg hover:bg-secondary/90 transition">
             Iniciar Sesión
           </a>
-          <a href="/user/register" className="px-6 py-3 bg-white/20 text-white border border-white/40 rounded-lg font-semibold shadow-lg hover:bg-white/30 transition">
+          <a href="/user/create" className="px-6 py-3 bg-white/20 text-white border border-white/40 rounded-lg font-semibold shadow-lg hover:bg-white/30 transition">
             Registrarse
           </a>
         </div>

@@ -24,6 +24,8 @@ import { EditAuction } from './components/Auction/EditAuction'
 import DetailBid from './components/Auction/DetailBid'
 
 import PaymentList from './components/Auction/PaymentList'
+import Login from './User/Login'
+import Register from './User/Register'
 
 const rutas = createBrowserRouter([
   {
@@ -43,6 +45,15 @@ const rutas = createBrowserRouter([
       { path: "object/create", element: <CreateObjectItem /> },
       { path: "object/:id", element: <DetailObject /> },
       { path: "object/:id/edit", element: <EditObject /> },
+
+      {
+        path: '/user/login',
+        element: <Login />
+      },
+      {
+        path: '/user/create',
+        element: <Register />
+      },
 
       // Subastas — mantenimiento (vendedor/admin)
       { path: "auction", element: <ListAuction /> },
