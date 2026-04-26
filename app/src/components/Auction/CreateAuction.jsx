@@ -17,17 +17,15 @@ import { Save, ArrowLeft, User, Info } from "lucide-react";
 // servicios
 import AuctionService from "@/services/AuctionService";
 import ObjectItemService from "@/services/ObjectItemService";
-import UserService from "@/services/UserService";
+
+// contexto
+import { useUser } from "@/hooks/useUser";
 
 // componentes reutilizables
 import { CustomInputField } from "../ui/custom/custom-input-field";
 import { CustomSelect } from "../ui/custom/custom-select";
 import { LoadingGrid } from "../ui/custom/LoadingGrid";
 import { ErrorAlert } from "../ui/custom/ErrorAlert";
-
-//Variable lógica simulada
-const SIMULATED_SELLER_ID = 1;
-
 
 const auctionSchema = yup.object({
     object_id: yup
@@ -63,8 +61,8 @@ const auctionSchema = yup.object({
 
 export function CreateAuction() {
     const navigate = useNavigate();
+    const { user } = useUser(); 
 
-    const [seller, setSeller] = useState(null);
     const [dataObjects, setDataObjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -90,33 +88,30 @@ export function CreateAuction() {
     const watchEnd = watch("end_at");
 
     useEffect(() => {
+        if (!user?.id) return;
         const fetchData = async () => {
             try {
-                const [userRes, objectsRes] = await Promise.all([
-                    UserService.getUserById(SIMULATED_SELLER_ID),
-                    ObjectItemService.getAvailableForSeller(SIMULATED_SELLER_ID),
-                ]);
-                setSeller(userRes.data.data);
+                const objectsRes = await ObjectItemService.getAvailableForSeller(user.id);
                 setDataObjects(objectsRes.data.data || []);
             } catch (err) {
-                setError("No se pudieron cargar los datos necesarios");
+                setError("No se pudieron cargar los objetos disponibles");
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, []);
+    }, [user?.id]);
 
     const onSubmit = async (dataForm) => {
         setSubmitting(true);
         try {
             const response = await AuctionService.create({
-                object_id: dataForm.object_id,
-                start_at: dataForm.start_at,
-                end_at: dataForm.end_at,
-                base_price: dataForm.base_price,
+                object_id:     dataForm.object_id,
+                start_at:      dataForm.start_at,
+                end_at:        dataForm.end_at,
+                base_price:    dataForm.base_price,
                 min_increment: dataForm.min_increment,
-                seller_id: SIMULATED_SELLER_ID,
+                seller_id:     user.id, 
             });
 
             if (response.data?.data?.error) {
@@ -147,12 +142,12 @@ export function CreateAuction() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-                {/* Vendedor asignado */}
+                {/* Vendedor asignado — nombre real del token */}
                 <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <div>
                         <p className="text-xs text-muted-foreground">Vendedor asignado</p>
-                        <p className="text-sm font-medium">{seller?.full_name || "—"}</p>
+                        <p className="text-sm font-medium">{user?.full_name || user?.email || "—"}</p>
                     </div>
                 </div>
 

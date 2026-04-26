@@ -90,6 +90,14 @@ class AuctionService {
         return axios.put(BASE_URL + '/activatePending');
     }
 
+    reportBySeller() {
+    return axios.get(BASE_URL + '/reportBySeller');
+    }
+
+    getOnlyFinalized() {
+    return axios.get(BASE_URL + '/getOnlyFinalized');
+    }
+
 }
 
 export default new AuctionService();

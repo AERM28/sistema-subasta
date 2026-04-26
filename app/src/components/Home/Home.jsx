@@ -1,6 +1,9 @@
 import auctionImg from "../../assets/auction-hero.png";
+import { useUser } from "@/hooks/useUser";
 
 export function Home() {
+  const { isAuthenticated } = useUser();
+
   return (
     <div className="relative w-full h-screen flex items-center justify-center text-center overflow-hidden">
       <div
@@ -22,15 +25,20 @@ export function Home() {
           Descubre objetos únicos y haz tus pujas en tiempo real.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="/object" className="px-6 py-3 bg-primary text-white rounded-lg font-semibold shadow-lg hover:bg-primary/90 transition">
-            Ver Objetos
+          <a href="/explorar" className="px-6 py-3 bg-primary text-white rounded-lg font-semibold shadow-lg hover:bg-primary/90 transition">
+            Ver Subastas
           </a>
-          <a href="/user/login" className="px-6 py-3 bg-secondary text-white rounded-lg font-semibold shadow-lg hover:bg-secondary/90 transition">
-            Iniciar Sesión
-          </a>
-          <a href="/user/create" className="px-6 py-3 bg-white/20 text-white border border-white/40 rounded-lg font-semibold shadow-lg hover:bg-white/30 transition">
-            Registrarse
-          </a>
+
+          {!isAuthenticated && (
+            <>
+              <a href="/user/login" className="px-6 py-3 bg-secondary text-white rounded-lg font-semibold shadow-lg hover:bg-secondary/90 transition">
+                Iniciar Sesión
+              </a>
+              <a href="/user/create" className="px-6 py-3 bg-white/20 text-white border border-white/40 rounded-lg font-semibold shadow-lg hover:bg-white/30 transition">
+                Registrarse
+              </a>
+            </>
+          )}
         </div>
       </div>
     </div>

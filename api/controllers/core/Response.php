@@ -12,8 +12,18 @@ class Response
 
     public function toJSON($response = [], $message = "")
     {
-        // Caso éxito
-        if (!empty($response)) {
+        // Array vacío o null = éxito sin resultados (200), NO un error
+        if ($response === [] || $response === null) {
+            $json = [
+                "success" => true,
+                "status"  => 200,
+                "message" => $message ?: "Solicitud exitosa",
+                "data"    => []
+            ];
+            $this->status = 200;
+
+        // Caso éxito con datos
+        } elseif (!empty($response)) {
             $json = [
                 "success" => true,
                 "status"  => 200,
@@ -22,34 +32,20 @@ class Response
             ];
             $this->status = 200;
 
-            // Caso sin resultados 
-        } elseif ($response === [] || $response === null) {
-            $json = [
-                "success" => false,
-                "status"  => 404,
-                "message" => $message ?: "Recurso no encontrado",
-                "error"   => [
-                    "code" => "NOT_FOUND",
-                    "details" => "El recurso solicitado no existe o no contiene datos"
-                ]
-            ];
-            $this->status = 404;
-
-            // Caso error interno
+        // Caso error interno (false, string de error, etc.)
         } else {
             $json = [
                 "success" => false,
                 "status"  => 500,
                 "message" => $message ?: "Error interno del servidor",
                 "error"   => [
-                    "code" => "INTERNAL_ERROR",
+                    "code"    => "INTERNAL_ERROR",
                     "details" => "Ocurrió un error inesperado"
                 ]
             ];
             $this->status = 500;
         }
 
-        // Escribir respuesta JSON con código de estado HTTP
         http_response_code($this->status);
         echo json_encode($json, JSON_UNESCAPED_UNICODE);
     }

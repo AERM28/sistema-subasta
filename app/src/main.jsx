@@ -27,47 +27,56 @@ import PaymentList from './components/Auction/PaymentList'
 import Login from './User/Login'
 import Register from './User/Register'
 
+import ProtectedRoute from './components/Auth/ProtectedRoute'
+import UnauthorizedPage from './components/Home/Unauthorizedpage'
+import ReportBySeller from './components/Auction/ReportBySeller'
+import FinalizedAuctionList from './components/Auction/FinalizedAuctionList';
+
 const rutas = createBrowserRouter([
   {
     element: <Layout />,
     children: [
-      // Principal
+
+      //Públicas 
       { index: true, element: <Home /> },
-      { path: "*", element: <PageNotFound /> },
-
-      // Usuarios
-      { path: "user", element: <TableUsers /> },
-      { path: "user/:id", element: <UserDetail /> },
-      { path: "user/:id/edit", element: <EditUser /> },
-
-      // Objetos
-      { path: "object", element: <ListObjects /> },
-      { path: "object/create", element: <CreateObjectItem /> },
-      { path: "object/:id", element: <DetailObject /> },
-      { path: "object/:id/edit", element: <EditObject /> },
-
-      {
-        path: '/user/login',
-        element: <Login />
-      },
-      {
-        path: '/user/create',
-        element: <Register />
-      },
-
-      // Subastas — mantenimiento (vendedor/admin)
-      { path: "auction", element: <ListAuction /> },
-      { path: "auction/create", element: <CreateAuction /> },
+      { path: "user/login",        element: <Login /> },
+      { path: "user/create",       element: <Register /> },
+      { path: "explorar",          element: <ActiveAuctionList /> },
+      { path: "auction/finalized", element: <FinalizedAuctionList /> },
+      { path: "auction/:id",       element: <CreateBid /> },
       { path: "auction/detail/:id", element: <DetailBid /> },
-      { path: "auction/:id/edit", element: <EditAuction /> },
-      { path: "auction/:id/bids", element: <ListBid /> },
+      { path: "payment",           element: <PaymentList /> },
+      { path: "unauthorized",      element: <UnauthorizedPage /> },
+      { path: "*",                 element: <PageNotFound /> },
 
-      // Subastas — explorar y pujar (comprador)
-      { path: "explorar", element: <ActiveAuctionList /> },
-      { path: "auction/:id", element: <CreateBid /> },
+      //Solo ADMINISTRADOR 
+      {
+        element: <ProtectedRoute requiredRoles={["administrador"]} redirectTo="/unauthorized" />,
+        children: [
+          { path: "user",              element: <TableUsers /> },
+          { path: "user/:id",          element: <UserDetail /> },
+          { path: "user/:id/edit",     element: <EditUser /> },
+          { path: "reportes",          element: <ReportBySeller /> },
+        ],
+      },
 
+      //ADMINISTRADOR o VENDEDOR
+      {
+        element: <ProtectedRoute requiredRoles={["administrador", "vendedor"]} redirectTo="/unauthorized" />,
+        children: [
+          { path: "object",            element: <ListObjects /> },
+          { path: "object/create",     element: <CreateObjectItem /> },
+          { path: "object/:id",        element: <DetailObject /> },
+          { path: "object/:id/edit",   element: <EditObject /> },
 
-      { path: "payment", element: <PaymentList /> },
+          { path: "auction",           element: <ListAuction /> },
+          { path: "auction/create",    element: <CreateAuction /> },
+          { path: "auction/detail/:id", element: <DetailBid /> },
+          { path: "auction/:id/edit",  element: <EditAuction /> },
+          { path: "auction/:id/bids",  element: <ListBid /> },
+        ],
+      },
+
     ]
   }
 ])

@@ -89,6 +89,20 @@ class AuctionModel
         return $vResultado;
     }
 
+    public function getOnlyFinalized()
+    {
+        $vSql = "SELECT a.*, ast.name AS status_name, oi.title AS object_title, u.full_name AS seller_name," .
+            " (SELECT COUNT(*) FROM bid b WHERE b.auction_id = a.id) AS total_bids," .
+            " (SELECT oi2.image FROM object_image oi2 WHERE oi2.object_id = a.object_id LIMIT 1) AS first_image" .
+            " FROM auction a, auction_status ast, object_item oi, user u" .
+            " WHERE a.status_id = ast.id" .
+            " AND a.object_id = oi.id" .
+            " AND a.seller_id = u.id" .
+            " AND a.status_id = 4" .
+            " ORDER BY a.end_at DESC;";
+        return $this->enlace->ExecuteSQL($vSql);
+    }
+
     public function getDraft()
     {
         $vSql = "SELECT a.*, ast.name AS status_name, oi.title AS object_title, u.full_name AS seller_name," .
@@ -286,8 +300,8 @@ class AuctionModel
             return ["error" => "Solo se puede publicar una subasta en estado borrador."];
         }
 
-        if (strtotime($auction->start_at) <= time()) {
-            return ["error" => "No se puede publicar: la fecha de inicio ya pasó."];
+        if (strtotime($auction->end_at) <= time()) {
+            return ["error" => "No se puede publicar: la subasta ya habría finalizado."];
         }
 
         $vSql = "UPDATE auction SET status_id = 2, published_at = NOW() WHERE id = $id;";
@@ -398,5 +412,16 @@ class AuctionModel
         $this->enlace->executeSQL_DML("UPDATE auction SET status_id = 4 WHERE id = $id;");
 
         return $this->get($id);
+    }
+
+    public function reportBySeller()
+    {
+        $vSql = "SELECT u.full_name AS seller_name, COUNT(a.id) AS total_auctions" .
+            " FROM auction a, user u" .
+            " WHERE a.seller_id = u.id" .
+            " GROUP BY u.id, u.full_name" .
+            " ORDER BY total_auctions DESC;";
+        $vResultado = $this->enlace->ExecuteSQL($vSql);
+        return $vResultado;
     }
 }

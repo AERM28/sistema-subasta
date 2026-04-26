@@ -1,12 +1,11 @@
+// src/components/layout/Header.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Layers, Gavel, Users, Package,
   Menu, X, ChevronDown, Trophy,
   User, LayoutList, CreditCard,
-  LogIn,
-  UserPlus,
-  LogOut,
+  LogIn, UserPlus, LogOut, BarChart2,
 } from "lucide-react";
 import {
   Menubar, MenubarMenu, MenubarTrigger,
@@ -20,26 +19,51 @@ export default function Header() {
   const { user, isAuthenticated, clearUser, authorize } = useUser();
   const userEmail = user?.email || "Invitado";
 
-  // ─── Menú Explorar (comprador) ───────────────────────────
+  // Menú Explorar
   const navItems = [
-    { title: "Subastas activas", href: "/explorar", icon: <Gavel className="h-4 w-4" /> },
-    { title: "Subastas finalizadas", href: "/auction/finalized", icon: <Trophy className="h-4 w-4" /> },
+    { title: "Subastas activas",    href: "/explorar",          icon: <Gavel      className="h-4 w-4" />, show: () => true },
+    { title: "Subastas finalizadas", href: "/auction/finalized", icon: <Trophy    className="h-4 w-4" />, show: () => true },
+    { title: "Pagos",               href: "/payment",           icon: <CreditCard className="h-4 w-4" />, show: () => authorize(["administrador", "comprador"]) },
   ];
 
-  // ─── Menú Mantenimientos (admin/vendedor) ─────────────────
+  //  Mantenimientos con control de roles 
   const mantItems = [
-    { title: "Usuarios", href: "/user", icon: <Users className="h-4 w-4" /> },
-    { title: "Objetos", href: "/object", icon: <Package className="h-4 w-4" /> },
-    { title: "Subastas", href: "/auction", icon: <LayoutList className="h-4 w-4" /> },
-    { title: "Pagos", href: "/payment", icon: <CreditCard className="h-4 w-4" /> },
+    {
+      title: "Usuarios",
+      href: "/user",
+      icon: <Users      className="h-4 w-4" />,
+      show: () => authorize(["administrador"]),
+    },
+    {
+      title: "Objetos",
+      href: "/object",
+      icon: <Package    className="h-4 w-4" />,
+      show: () => authorize(["administrador", "vendedor"]),
+    },
+    {
+      title: "Subastas",
+      href: "/auction",
+      icon: <LayoutList className="h-4 w-4" />,
+      show: () => authorize(["administrador", "vendedor"]),
+    },
+    {
+      title: "Reportes",
+      href: "/reportes",
+      icon: <BarChart2  className="h-4 w-4" />,
+      show: () => authorize(["administrador"]),             
+    },
   ];
 
+  const visibleMantItems = mantItems.filter(item => item.show());
+  const showMantMenu = visibleMantItems.length > 0;
+
+  // Menú Usuario 
   const userItems = [
     {
       title: "Login",
       href: "/user/login",
-      icon: <LogIn className="h-4 w-4" />,
-      show: !isAuthenticated, // solo visible si NO está autenticado
+      icon: <LogIn   className="h-4 w-4" />,
+      show: !isAuthenticated,
     },
     {
       title: "Registrarse",
@@ -50,7 +74,7 @@ export default function Header() {
     {
       title: "Logout",
       href: "#login",
-      icon: <LogOut className="h-4 w-4" />,
+      icon: <LogOut  className="h-4 w-4" />,
       show: isAuthenticated,
       action: clearUser,
     },
@@ -76,7 +100,7 @@ export default function Header() {
                 <Gavel className="h-4 w-4" /> Explorar <ChevronDown className="h-3 w-3" />
               </MenubarTrigger>
               <MenubarContent className="bg-primary/80 backdrop-blur-xl border border-white/20 shadow-xl [&_*]:text-white">
-                {navItems.map((item) => (
+                {navItems.filter(item => item.show()).map((item) => (
                   <MenubarItem key={item.href} asChild className="focus:bg-white/10 focus:text-white">
                     <Link to={item.href} className="flex items-center gap-2 py-2 px-3 rounded-md text-sm text-white hover:bg-white/10 transition">
                       {item.icon} {item.title}
@@ -87,20 +111,22 @@ export default function Header() {
             </MenubarMenu>
 
             {/* Mantenimientos */}
-            <MenubarMenu>
-              <MenubarTrigger className="text-white font-medium flex items-center gap-1 hover:text-secondary transition">
-                <Layers className="h-4 w-4" /> Mantenimientos <ChevronDown className="h-3 w-3" />
-              </MenubarTrigger>
-              <MenubarContent className="bg-primary/80 backdrop-blur-xl border border-white/20 shadow-xl [&_*]:text-white">
-                {mantItems.map((item) => (
-                  <MenubarItem key={item.href} asChild className="focus:bg-white/10 focus:text-white">
-                    <Link to={item.href} className="flex items-center gap-2 py-2 px-3 rounded-md text-sm text-white hover:bg-white/10 transition">
-                      {item.icon} {item.title}
-                    </Link>
-                  </MenubarItem>
-                ))}
-              </MenubarContent>
-            </MenubarMenu>
+            {showMantMenu && (
+              <MenubarMenu>
+                <MenubarTrigger className="text-white font-medium flex items-center gap-1 hover:text-secondary transition">
+                  <Layers className="h-4 w-4" /> Mantenimientos <ChevronDown className="h-3 w-3" />
+                </MenubarTrigger>
+                <MenubarContent className="bg-primary/80 backdrop-blur-xl border border-white/20 shadow-xl [&_*]:text-white">
+                  {visibleMantItems.map((item) => (
+                    <MenubarItem key={item.href} asChild className="focus:bg-white/10 focus:text-white">
+                      <Link to={item.href} className="flex items-center gap-2 py-2 px-3 rounded-md text-sm text-white hover:bg-white/10 transition">
+                        {item.icon} {item.title}
+                      </Link>
+                    </MenubarItem>
+                  ))}
+                </MenubarContent>
+              </MenubarMenu>
+            )}
 
             {/* Usuario */}
             <MenubarMenu>
@@ -137,24 +163,28 @@ export default function Header() {
               <Link to="/" className="flex items-center gap-2 text-lg font-semibold">
                 <Gavel /> SubastaSeries
               </Link>
+
               <div>
                 <h4 className="mb-2 text-lg font-semibold flex items-center gap-2"><Gavel /> Explorar</h4>
-                {navItems.map((item) => (
+                {navItems.filter(item => item.show()).map((item) => (
                   <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-white/10 transition">
                     {item.icon} {item.title}
                   </Link>
                 ))}
               </div>
-              <div>
-                <h4 className="mb-2 text-lg font-semibold flex items-center gap-2"><Layers /> Mantenimientos</h4>
-                {mantItems.map((item) => (
-                  <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-white/10 transition">
-                    {item.icon} {item.title}
-                  </Link>
-                ))}
-              </div>
+
+              {showMantMenu && (
+                <div>
+                  <h4 className="mb-2 text-lg font-semibold flex items-center gap-2"><Layers /> Mantenimientos</h4>
+                  {visibleMantItems.map((item) => (
+                    <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-2 py-2 px-3 rounded-md text-white/90 hover:bg-white/10 transition">
+                      {item.icon} {item.title}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </nav>
           </SheetContent>
         </Sheet>

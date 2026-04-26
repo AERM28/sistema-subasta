@@ -109,14 +109,16 @@ class ObjectItemModel
         $imagenA    = new ObjectImageModel();
         $categoriaA = new CategoryModel();
 
-        $vSql = "SELECT oi.* FROM object_item oi
-             WHERE oi.seller_id = $sellerId
-             AND oi.status_id = 1
-             AND NOT EXISTS (
-                 SELECT 1 FROM auction a 
-                 WHERE a.object_id = oi.id 
-                 AND a.status_id in (2,3)
-             );";
+        $vSql = "SELECT oi.*, u.full_name AS seller_name 
+         FROM object_item oi, user u
+         WHERE oi.seller_id = u.id
+         AND oi.seller_id = $sellerId
+         AND oi.status_id = 1
+         AND NOT EXISTS (
+             SELECT 1 FROM auction a 
+             WHERE a.object_id = oi.id 
+             AND a.status_id in (2,3)
+         );";
         $vResultado = $this->enlace->ExecuteSQL($vSql);
 
         if (!empty($vResultado) && is_array($vResultado)) {

@@ -57,11 +57,10 @@ export default function DetailBid() {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useUser();
 
-    // Ref del ID: siempre actualizado, sin problema de closure en callbacks
     const currentUserIdRef = useRef(user?.id);
     useEffect(() => { currentUserIdRef.current = user?.id; }, [user?.id]);
 
-    // ── Estados ───────────────────────────────────────────────
+    //Estados
     const [countdown, setCountdown] = useState(5);
     const [auction, setAuction] = useState(null);
     const [bids, setBids] = useState([]);
@@ -78,9 +77,7 @@ export default function DetailBid() {
     const closedRef = useRef(false);
     const surpassedRef = useRef(false);
 
-    // ── Callbacks de Pusher ───────────────────────────────────
-    // Deben definirse ANTES de useAuctionRealtime y ANTES de
-    // cualquier return condicional para respetar las reglas de hooks.
+    //Callbacks de Pusher 
     const checkIfSurpassed = useCallback((newBids) => {
         const myId = currentUserIdRef.current;
         if (!myId) return;
@@ -88,7 +85,6 @@ export default function DetailBid() {
         const topBid = getHighestBid(newBids);
         if (!topBid) return;
 
-        // Verificar si yo tengo al menos una puja en el historial
         const iHaveBid = newBids.some(b => parseInt(b.bidder_id) === parseInt(myId));
         if (!iHaveBid) return;
 
@@ -96,13 +92,14 @@ export default function DetailBid() {
             if (!surpassedRef.current) {
                 surpassedRef.current = true;
                 setBidSurpassed(true);
-                toast.error("¡Tu puja ha sido superada!", { duration: 5000 });
+                localStorage.setItem(`surpassed_${id}`, 'true');
             }
         } else {
             surpassedRef.current = false;
             setBidSurpassed(false);
+            localStorage.removeItem(`surpassed_${id}`);
         }
-    }, []);
+    }, [id]);
 
     const onBidCreated = useCallback((data) => {
         const newBid = data.bid;
@@ -129,10 +126,9 @@ export default function DetailBid() {
         }
     }, []);
 
-    // ── Pusher: siempre antes de cualquier return condicional ─
     useAuctionRealtime(id, { onBidCreated, onAuctionClosed });
 
-    // ── Guard ─────────────────────────────────────────────────
+    //Guard 
     useEffect(() => {
         if (!isAuthenticated) {
             const interval = setInterval(() => {
@@ -145,7 +141,7 @@ export default function DetailBid() {
         }
     }, [isAuthenticated, navigate]);
 
-    // ── Carga inicial ─────────────────────────────────────────
+    //Carga inicial 
     useEffect(() => {
         if (!isAuthenticated) return;
         const fetchData = async () => {
@@ -165,6 +161,14 @@ export default function DetailBid() {
                         } catch (_) { }
                     }
                 }
+
+                // Recuperar aviso de puja superada desde localStorage
+                const wasSurpassed = localStorage.getItem(`surpassed_${id}`);
+                if (wasSurpassed) {
+                    setBidSurpassed(true);
+                    surpassedRef.current = true;
+                }
+
             } catch (err) {
                 setError(err.message || "Error al cargar la subasta");
             } finally {
@@ -174,7 +178,7 @@ export default function DetailBid() {
         fetchData();
     }, [id, isAuthenticated]);
 
-    // ── Contador ──────────────────────────────────────────────
+    //Contador
     useEffect(() => {
         if (!auction || isClosed) return;
         timerRef.current = setInterval(() => {
@@ -190,7 +194,7 @@ export default function DetailBid() {
         return () => clearInterval(timerRef.current);
     }, [auction, isClosed, id]);
 
-    // ── Enviar puja ───────────────────────────────────────────
+    //Enviar puja
     const handleBid = async () => {
         const numAmount = parseFloat(amount);
         if (!numAmount || numAmount <= 0) { toast.error("Ingresá un monto válido."); return; }
@@ -201,7 +205,11 @@ export default function DetailBid() {
                 bidder_id: currentUserIdRef.current,
                 amount: numAmount,
             });
-            if (response.data?.error) { toast.error(response.data.error, { duration: 5000 }); return; }
+            const responseData = response.data?.data;
+            if (responseData?.error) {
+                toast.error(responseData.error, { duration: 5000 });
+                return;
+            }
             setAmount("");
             toast.success("¡Puja registrada correctamente!", { duration: 3000 });
         } catch (err) {
@@ -211,7 +219,7 @@ export default function DetailBid() {
         }
     };
 
-    // ── Returns condicionales: siempre al final, después de todos los hooks ──
+    //Returns condicionales 
     if (!isAuthenticated) {
         return (
             <div className="container mx-auto py-24 flex flex-col items-center gap-6 text-center">
@@ -255,7 +263,11 @@ export default function DetailBid() {
                         Tu puja ha sido superada. ¡Podés ofertar de nuevo para recuperar el liderazgo!
                     </p>
                     <Button size="sm" variant="outline" className="ml-auto border-orange-400 text-orange-600"
-                        onClick={() => { setBidSurpassed(false); surpassedRef.current = false; }}>
+                        onClick={() => {
+                            setBidSurpassed(false);
+                            surpassedRef.current = false;
+                            localStorage.removeItem(`surpassed_${id}`);
+                        }}>
                         Cerrar
                     </Button>
                 </div>

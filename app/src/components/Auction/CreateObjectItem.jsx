@@ -19,7 +19,9 @@ import { Save, ArrowLeft, User } from "lucide-react";
 import CategoryService from "@/services/CategoryService";
 import ObjectItemService from "@/services/ObjectItemService";
 import ObjectImageService from "@/services/ObjectImageService";
-import UserService from "@/services/UserService";
+
+// contexto
+import { useUser } from "@/hooks/useUser";
 
 // componentes reutilizables
 import { CustomMultiSelect } from "../ui/custom/custom-multiple-select";
@@ -28,19 +30,29 @@ import { CustomSelect } from "../ui/custom/custom-select";
 import { LoadingGrid } from "../ui/custom/LoadingGrid";
 import { ErrorAlert } from "../ui/custom/ErrorAlert";
 
-// Variable lógica simulada
-const SIMULATED_SELLER_ID = 1;
-
-
 const CONDITIONS = [
     { id: "nuevo", name: "Nuevo" },
     { id: "usado", name: "Usado" },
 ];
 
+const objectSchema = yup.object({
+    title: yup.string()
+        .required("El nombre es requerido")
+        .min(3, "El nombre debe tener mínimo 3 caracteres")
+        .max(120, "El nombre no puede superar 120 caracteres"),
+    description: yup.string()
+        .required("La descripción es requerida")
+        .min(20, "La descripción debe tener al menos 20 caracteres"),
+    item_condition: yup.string()
+        .required("La condición es requerida"),
+    categories: yup.array()
+        .min(1, "Debe seleccionar al menos una categoría"),
+});
+
 export function CreateObjectItem() {
     const navigate = useNavigate();
+    const { user } = useUser(); 
 
-    const [seller, setSeller]                 = useState(null);
     const [dataCategories, setDataCategories] = useState([]);
     const [file, setFile]                     = useState(null);
     const [fileURL, setFileURL]               = useState(null);
@@ -49,22 +61,6 @@ export function CreateObjectItem() {
     const [error, setError]                   = useState("");
     const [submitting, setSubmitting]         = useState(false);
 
-    /* Esquema de validación Yup */
-    const objectSchema = yup.object({
-        title: yup.string()
-            .required("El nombre es requerido")
-            .min(3, "El nombre debe tener mínimo 3 caracteres")
-            .max(120, "El nombre no puede superar 120 caracteres"),
-        description: yup.string()
-            .required("La descripción es requerida")
-            .min(20, "La descripción debe tener al menos 20 caracteres"),
-        item_condition: yup.string()
-            .required("La condición es requerida"),
-        categories: yup.array()
-            .min(1, "Debe seleccionar al menos una categoría"),
-    });
-
-    /* React Hook Form */
     const {
         control,
         handleSubmit,
@@ -79,7 +75,6 @@ export function CreateObjectItem() {
         resolver: yupResolver(objectSchema),
     });
 
-    /*** Manejo de imagen ***/
     const handleChangeImage = (e) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
@@ -89,15 +84,10 @@ export function CreateObjectItem() {
         }
     };
 
-    /*** Carga de datos ***/
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [userRes, categoriesRes] = await Promise.all([
-                    UserService.getUserById(SIMULATED_SELLER_ID),
-                    CategoryService.getAll(),
-                ]);
-                setSeller(userRes.data.data);
+                const categoriesRes = await CategoryService.getAll();
                 setDataCategories(categoriesRes.data.data || []);
             } catch (err) {
                 if (err.name !== "AbortError") setError(err.message);
@@ -108,7 +98,6 @@ export function CreateObjectItem() {
         fetchData();
     }, []);
 
-    /*** Submit ***/
     const onSubmit = async (dataForm) => {
         if (!file) {
             setImageError("Debes seleccionar al menos una imagen para el objeto.");
@@ -122,7 +111,7 @@ export function CreateObjectItem() {
                 description:    dataForm.description,
                 item_condition: dataForm.item_condition,
                 categories:     dataForm.categories,
-                seller_id:      SIMULATED_SELLER_ID,
+                seller_id:      user.id, 
                 status_id:      1,
             });
 
@@ -159,7 +148,7 @@ export function CreateObjectItem() {
                     <User className="h-4 w-4 text-muted-foreground" />
                     <div>
                         <p className="text-xs text-muted-foreground">Vendedor asignado</p>
-                        <p className="text-sm font-medium">{seller?.full_name || "—"}</p>
+                        <p className="text-sm font-medium">{user?.full_name || user?.email || "—"}</p>
                     </div>
                 </div>
 

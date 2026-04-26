@@ -70,6 +70,14 @@ class auction
         }
     }
 
+    public function getOnlyFinalized()
+    {
+        $response = new Response();
+        $auction  = new AuctionModel();
+        $result   = $auction->getOnlyFinalized();
+        $response->toJSON($result);
+    }
+
     public function getDraft()
     {
         try {
@@ -285,5 +293,13 @@ class auction
         } catch (Exception $e) {
             handleException($e);
         }
+    }
+
+    public function reportBySeller()
+    {
+        $response = new Response();
+        $auction  = new AuctionModel();
+        $result   = $auction->reportBySeller();
+        $response->toJSON($result);
     }
 }

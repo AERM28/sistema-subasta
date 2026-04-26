@@ -90,6 +90,9 @@ class UserModel
             if (password_verify($objeto->password, $user->password)) {
                 $usuario = $this->get($user->id);
                 if (!empty($usuario)) {
+                    if ($usuario->status_id != 1) {
+                        return false;
+                    }
                     $data = [
                         'id'        => $usuario->id,
                         'email'     => $usuario->email,
